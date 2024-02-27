@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+venv/
+env/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Logs
+*.log
+
+# Test coverage
+htmlcov/
+
+# Documentation
+docs/_build/
+
+# Compiled source
+__pycache__/
+*.pyc
+
+# C extensions
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+
+# .pytest_cache
+pytest_cache/
+
+# .mypy_cache
+.mypy_cache/
+
+# Ignore poetry virtual environment
+# (https://python-poetry.org/docs/configuration/#virtualenvscreate)
+__pypackages__/
+
+# Ignore Pipfile.lock (created by pipenv)
+Pipfile.lock
+
+# Mac OS
+.DS_Store
+
+
+*.cache
+*.bash_history
+*.local
+*.python_history
+
+*.config
+*.cache
+*.bash_history
+*.bashrc
+*.local
+*.python_history
