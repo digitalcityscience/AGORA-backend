@@ -18,6 +18,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
     "/register", status_code=status.HTTP_201_CREATED, response_model=user_login.UserOut
 )
 def create_user(user: user_login.UserCreate, db: Session = Depends(database.get_db)):
+    """
+    Buna sadece admin ulasacak sekilde guncelle
+    
+    
+    """
     try:
         # hash the password = user.password
         hashed_password = utils.hash(user.password)

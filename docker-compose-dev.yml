@@ -1,6 +1,50 @@
+# version: "3.3"
+# volumes:
+#   agora-dev-db-data:
+# services:
+#   db:
+#     image: kartoza/postgis:15-3.3
+#     container_name: agora-dev-db
+#     volumes:
+#       - agora-dev-db-data:/var/lib/postgresql
+#     ports:
+#       - 5434:5432
+#     environment:
+#       - POSTGRES_DB=${DATABASE_NAME}
+#       - POSTGRES_USER=${DATABASE_USERNAME}
+#       - POSTGRES_PASS=${DATABASE_PASSWORD}
+#       - FORCE_SSL=FALSE
+#     restart: on-failure
+#     networks:
+#       - agora_network
+#   api:
+#     container_name: agora-dev-api
+#     build: ./src/docker-python-env/.
+#     image: agora-api-image:dev-latest
+#     # command: |
+#     #   bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; poetry config virtualenvs.create false && uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
+#     command: |
+#       bash -c '
+#       cd /src &&
+#       while !</dev/tcp/db/5432; do sleep 1; done &&
+#       poetry config virtualenvs.create false &&
+#       uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
+
+#     volumes:
+#       - ./src:/src
+#     environment:
+#       - WORKING_DIR=/src
+#     ports:
+#       - 8002:8000
+#     networks:
+#       - agora_network
+
+#   networks:
+#     agora_network:
+#       driver: bridge
+
 version: "3.3"
-volumes:
-  agora-dev-db-data:
+
 services:
   db:
     image: kartoza/postgis:15-3.3
@@ -8,29 +52,39 @@ services:
     volumes:
       - agora-dev-db-data:/var/lib/postgresql
     ports:
-      - 5434:5432
+      - 5434:5432 # Map host port 5434 to container port 5432
     environment:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
       - POSTGRES_PASS=${DATABASE_PASSWORD}
       - FORCE_SSL=FALSE
     restart: on-failure
+    networks:
+      - agora_network
+
   api:
+    image: agora-api-image:dev-latest # Assuming you've built this image
     container_name: agora-dev-api
-    build: ./src/docker-python-env/.
-    image: agora-api-image:dev-latest
-    # command: |
-    #   bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; poetry config virtualenvs.create false && uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
+    depends_on:
+      - db
     command: |
       bash -c '
       cd /src &&
       while !</dev/tcp/db/5432; do sleep 1; done &&
       poetry config virtualenvs.create false &&
       uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
-
     volumes:
       - ./src:/src
     environment:
       - WORKING_DIR=/src
     ports:
       - 8002:8000
+    networks:
+      - agora_network
+
+networks:
+  agora_network:
+    driver: bridge
+
+volumes:
+  agora-dev-db-data:

@@ -9,6 +9,46 @@ docker run --name fastapi-cont -p 8083:8000 -it -e SHELL=/bin/bash -v /home/orta
 - login ve register endpointlerini yazalim >>> yazdik
 - login ve register endpointlerini test edelim >>> yazdik
 - connection pool ile db baglantilarini optimize edelim ve DB de ilk okumamizi yapalim > yaptik
+  28 subat tarihi
+  - Asagidakiler yerine fastapi ye gelen istekleri geoserver a atip oradan gelenleri de geri donme uzerine deneyler yapacaz.
+  - FE sol tarafi sabit kalacak. orasi geoserver api dan listelenmeye devam edecek.
+  - daha sonra add data dedigimizde olan kismi biz geoserver dan getircez.
+    ---- yukarisi bitince asagiya gececez
+    ---- 01.03.2024
+- wmts geoserver ile birebir ayni endpoint mantigini kullancaz. aslinda tum standartlar icin ayni olacak. get data isleri icin
+- get:workspace/public/list => workspaces: {
+  workspace:[
+  {
+  name: "lig-3",
+  href: "http://localhost:8080/geoserver/rest/workspaces/lig-3.json"
+  }
+  ]}
+- get:workspace/private/list => workspaces: {
+  workspace:[
+  {
+  name: "lig-3",
+  href: "http://localhost:8080/geoserver/rest/workspaces/lig-3.json"
+  }
+  ]}
+
+- get:layers/public/list?workspaceName=name => layers: {
+  layer:[ {
+  name: "lig-3:lig-3",
+  href: "http://localhost:8080/geoserver/rest/layers/lig-3:lig-3.json"
+  }
+  ]}
+- get:layers/private/list?workspaceName=name => layers: {
+  layer:[ {
+  name: "lig-3:lig-3",
+  href: "http://localhost:8080/geoserver/rest/layers/lig-3:lig-3.json"
+  }
+  ]}
+
+- post:layers/public/detail?name=name&href="" =>  
+  asnswer of thishttp://dev.geoserver.tosca.dcs.hcu-hamburg.de/geoserver/rest/workspaces/public/datastores/apotheken/featuretypes/apotheken.json
+- post:layers/private/detail?name=name&href="" =>  
+  asnswer of thishttp://dev.geoserver.tosca.dcs.hcu-hamburg.de/geoserver/rest/workspaces/public/datastores/apotheken/featuretypes/apotheken.json
+
 - ligfinder ednpointleri ile test yapalim
 - geo sqlalchemy ile db deki verileri cekelim. bakalim fonskiyonlarimiz calisiyor mu?|
   - sqlalchemy ile direk sql de kosturabiliyorz.

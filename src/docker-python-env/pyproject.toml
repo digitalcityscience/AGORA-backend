@@ -22,6 +22,11 @@ psycopg2-binary = "^2.9.9"
 passlib = "^1.7.4"
 python-multipart = "^0.0.6"
 httpx = "^0.26.0"
+geoserver-restconfig = "^2.0.10"
+fiona = "^1.9.6"
+pydantic-geojson = "^0.1.1"
+geopandas = "^0.14.3"
+geojson-pydantic = "^1.0.2"
 
 [build-system]
 requires = ["poetry-core"]
