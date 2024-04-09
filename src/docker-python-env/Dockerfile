@@ -89,10 +89,10 @@ COPY ./*yml ./*.toml ./*.lock ./.config/* /mnt/${NB_USER}/installation/
 # # Check for conda-lock.yml or environment.yml
 RUN if [ -s "conda-lock.yml" ]; then \
         echo "Running command for conda-lock"; \
-        conda-lock install --name ${CONDA_ENV} ${CONDA_LOCK_FILE}; \
+        conda-lock install --name ${CONDA_ENV} ${CONDA_LOCK_FILE} -y; \
     elif [ -s "environment.yml" ]; then \
         echo "Running command for environment.yml"; \
-        conda env create -f environment.yml --name ${CONDA_ENV} --no-default-packages  \
+        conda env create -f environment.yml --name ${CONDA_ENV} --no-default-packages -y \
     else \
         echo "Conda env is created by system with default ${PYTHON_VERSION}}, mamba,pip and poetry"; \
         conda create -n ${CONDA_ENV} python=${PYTHON_VERSION} mamba pip conda-lock poetry==1.3.1; \

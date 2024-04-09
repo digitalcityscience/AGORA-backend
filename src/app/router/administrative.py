@@ -28,7 +28,7 @@ router = APIRouter(prefix="/administrative", tags=["administrative"])
 
 class TargetColumn(BaseModel):
     name:str='gid'
-    tc_list: list[int]
+    target_value_list: list[int]
 
 administrative_table_list = [
     {"table_name": "bezirke", "name":"Bezirke", "id": 1},
@@ -39,6 +39,10 @@ administrative_table_list = [
 
 @router.get("/list",status_code=status.HTTP_200_OK)
 def get_administrative_tables():
+    """
+    Get all administrative tables in the database
+    
+    """
     try:
         return {"data":administrative_table_list}
     except Exception as e:
@@ -46,6 +50,11 @@ def get_administrative_tables():
 
 @router.post("/data/{table_id}",status_code=status.HTTP_201_CREATED) 
 def get_administrative_table_data(table_id:int):
+    """
+    You can get all data from the table by sending the table_id
+
+    sample request: {{URL}}/administrative/data/1?table_id=1
+    """
     try:
         table_name = next((item["table_name"] for item in administrative_table_list if item["id"] == table_id), None)
         if table_name is None:
@@ -74,7 +83,7 @@ def get_administrative_feature_data(table_id: int, target_column: TargetColumn):
         if table_name is None:
             raise HTTPException(status_code=404, detail="Table not found")
         # SQL sorgusu oluştur
-        tuple_gid = tuple(target_column.tc_list)
+        tuple_gid = tuple(target_column.target_value_list)
         sql_query = f"""
             select json_build_object(
           'type', 'FeatureCollection',
