@@ -48,7 +48,7 @@ def get_administrative_tables():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-@router.post("/data/{table_id}",status_code=status.HTTP_201_CREATED) 
+@router.get("/data/{table_id}",status_code=status.HTTP_201_CREATED) 
 def get_administrative_table_data(table_id:int):
     """
     You can get all data from the table by sending the table_id
@@ -75,7 +75,7 @@ def get_administrative_table_data(table_id:int):
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
-@router.post("/data/features/{table_id}", status_code=status.HTTP_201_CREATED)
+@router.get("/data/features/{table_id}", status_code=status.HTTP_201_CREATED)
 def get_administrative_feature_data(table_id: int, target_column: TargetColumn):
     try:
         # Belirtilen table_id'ye göre tablo adını bul
