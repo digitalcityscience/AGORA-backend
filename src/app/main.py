@@ -2,7 +2,7 @@ from typing import Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.router import auth,geometry_operations,test,administrative
+from app.router import auth,geometry_operations,test,administrative, isochrones
 
 from app.auth.database import Base
 from app.auth.database import engine
@@ -35,3 +35,4 @@ app.include_router(test.router)
 app.include_router(auth.router)
 app.include_router(geometry_operations.router)
 app.include_router(administrative.router)
+app.include_router(isochrones.router)
