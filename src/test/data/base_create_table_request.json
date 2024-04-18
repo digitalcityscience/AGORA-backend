@@ -1,0 +1,16 @@
+{
+  "geometry": ["1", "2"],
+  "criteria": [
+    {
+      "status": "included",
+      "data": { "type": "value", "column": ["T_1_47_A"], "value": "081" }
+    }
+  ],
+  "metric": [
+    {
+      "column": "area_fme",
+      "operation": ">",
+      "value": "5000"
+    }
+  ]
+}

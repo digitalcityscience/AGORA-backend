@@ -1,16 +1,11 @@
 from fastapi import APIRouter, Body, status, HTTPException, Response
 from sqlalchemy.orm import Session
-from typing import Optional
-from pydantic import BaseModel, Field,field_validator,validator
 import json  
 import geopandas as gpd
 
 
-from app.auth import database, utils, oauth2
-from app.schemas import user_login
-from app.models import user_model
-from app.auth.config import settings
-from app.models.ligfinderModel import FilterFeatureCollection 
+from app.auth import database
+from app.models.geometryOperationModel import FilterFeatureCollection 
 import app.common.geopandsFuncs as geopandsFuncs
 
 router = APIRouter(prefix="/geometry", tags=["geometryOperations"])
@@ -35,6 +30,42 @@ def geo_filter(data: FilterFeatureCollection = Body(...)):
         # we get the first row of the result which is geojson
         raw_data = sql_answer.fetchone()
         return raw_data[0]
+    except ValueError as e:
+        # Handle data validation errors
+        raise HTTPException(status_code=400, detail=f"An ValueError error occurred: {e}")
+    except Exception as e:  # Catch generic errors
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+    
+
+from app.models.isochronesModel import IsochroneCreate
+from app.common.isochronesFuncs import get_iso_aoi
+
+@router.post("/isochrones",status_code=status.HTTP_201_CREATED)
+def create_isochrones(data: IsochroneCreate = Body(...)):
+    """
+    Create isochrones by sending the center coordinates, time and mode.
+    Sample request object:
+
+    Modes: walk_network,bike_network,drive_network
+
+
+    {
+        "time": "3",
+        "center": {
+          "lng": 9.990004262251006,
+          "lat": 53.55316847206518
+        },
+        "mode": "walk_network"
+    }
+    """
+    try:
+            time = float(data.time)*60
+            center = data.center
+            lng = float(center.lng)
+            lat = float(center.lat)
+            mode = data.mode
+            return get_iso_aoi(mode, lng, lat, time)  # done
+
     except ValueError as e:
         # Handle data validation errors
         raise HTTPException(status_code=400, detail=f"An ValueError error occurred: {e}")

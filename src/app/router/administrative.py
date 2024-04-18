@@ -1,17 +1,9 @@
 from fastapi import APIRouter, Body, status, HTTPException, Response
 from sqlalchemy.orm import Session
 from typing import Optional
-from pydantic import BaseModel, Field,field_validator,validator
-import json  
-import geopandas as gpd
+from pydantic import BaseModel
 
 
-from app.auth import database, utils, oauth2
-from app.schemas import user_login
-from app.models import user_model
-from app.auth.config import settings
-from app.models.ligfinderModel import FilterFeatureCollection 
-import app.common.geopandsFuncs as geopandsFuncs
 
 router = APIRouter(prefix="/administrative", tags=["administrative"])
 """
