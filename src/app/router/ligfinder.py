@@ -62,25 +62,23 @@ or T_50_253_A in('084_2030') or T_50_253_A in('080_2800') or T_50_253_A in('080_
             metric_sql_query=[]
             for i in range(len(metric)):
                 metric_sql_query.append(f"{metric[i].column} {metric[i].operation} {metric[i].value}")
-            metric_sql_query = " OR ".join(metric_sql_query)
+            metric_sql_query = " AND ".join(metric_sql_query)
             where_clauses.append(metric_sql_query)
 
-        sql_query += " OR ".join(where_clauses)
+        sql_query += " and ".join(where_clauses)
         print(sql_query)
-        # print(sql_query)
-        # sql_query2= "select json_build_object('type', 'FeatureCollection','features', json_agg(ST_AsGeoJSON(parcel.*)::json)) from parcel where gid in (52604, 58446, 65480, 65934, 77620, 77938) and T_1_47_A is distinct from '082_2480' and (T_1_47_A in('081_2901') or T_1_47_A in('081_2902') ) "
+        sql_answer = database.execute_sql_query(sql_query)
+        raw_data = sql_answer.fetchone()
+        return raw_data[0]
+
+        # with open("./app/router/test.txt", "r") as f:
+        #   sql_query2 = f.read()
+        # #sql_query += " OR ".join(where_clauses)
+        # # print(sql_query)
+        # print(sql_query2)
         # sql_answer = database.execute_sql_query(sql_query2)
         # raw_data = sql_answer.fetchone()
         # return raw_data[0]
-
-        with open("./app/router/test.txt", "r") as f:
-          sql_query2 = f.read()
-        #sql_query += " OR ".join(where_clauses)
-        # print(sql_query)
-        print(sql_query2)
-        sql_answer = database.execute_sql_query(sql_query2)
-        raw_data = sql_answer.fetchone()
-        return raw_data[0]
 
     except ValueError as e:
         # Handle data validation errors

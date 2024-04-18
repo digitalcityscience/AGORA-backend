@@ -2,7 +2,7 @@ from fastapi import APIRouter, Body, status, HTTPException, Response
 from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel
-
+import app.auth.database as database
 
 
 router = APIRouter(prefix="/administrative", tags=["administrative"])
@@ -48,6 +48,7 @@ def get_administrative_table_data(table_id:int):
     sample request: {{URL}}/administrative/data/1?table_id=1
     """
     try:
+        print("table_id",table_id)
         table_name = next((item["table_name"] for item in administrative_table_list if item["id"] == table_id), None)
         if table_name is None:
             raise HTTPException(status_code=404, detail="Table not found")
