@@ -40,7 +40,7 @@ def geo_filter(data: FilterFeatureCollection = Body(...)):
 from app.models.isochronesModel import IsochroneCreate
 from app.common.isochronesFuncs import get_iso_aoi
 
-@router.post("/isochrones",status_code=status.HTTP_201_CREATED)
+@router.post("/isochrone",status_code=status.HTTP_201_CREATED)
 def create_isochrones(data: IsochroneCreate = Body(...)):
     """
     Create isochrones by sending the center coordinates, time and mode.
