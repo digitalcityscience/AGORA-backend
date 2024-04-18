@@ -2,7 +2,7 @@ from typing import Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.router import auth,geometry_operations,test,administrative, ligfinder
+from app.router import auth, geometry_operations, test, administrative, ligfinder
 
 from app.auth.database import Base
 from app.auth.database import engine

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine,text
+from sqlalchemy import create_engine, text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
@@ -22,6 +22,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 def execute_sql_query(sql_query: str):
     with engine.connect() as connection:

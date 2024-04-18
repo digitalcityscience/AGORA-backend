@@ -42,8 +42,7 @@ def test_login(client, test_user):
     # our solution is to call create test user function again
     url = "/auth/login"
     response = client.post(
-        url,
-        data={"username": test_user["email"], "password": test_user["password"]},
+        url, data={"username": test_user["email"], "password": test_user["password"]},
     )
     login_res = user_login.Token(**response.json())
     payload = jwt.decode(

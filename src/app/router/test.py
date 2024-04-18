@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, HTTPException,Request, Query,Response
+from fastapi import APIRouter, Depends, status, HTTPException, Request, Query, Response
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer
 
@@ -62,9 +62,14 @@ def get_table(table_name: str, db: Session = Depends(database.get_db)):
         logging.error(f"!!! Error : {error}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
 GEOSERVER_URL = "http://dev.geoserver.tosca.dcs.hcu-hamburg.de/geoserver"
+
+
 @router.get("/get_geoserver_data")
-async def get_vector_tile(request: Request,current_user: int = Depends(oauth2.get_current_user),):
+async def get_vector_tile(
+    request: Request, current_user: int = Depends(oauth2.get_current_user),
+):
     # Request'ten parametreleri al
     params = request.query_params
     workspaceName = params.get("workspaceName")
@@ -77,7 +82,10 @@ async def get_vector_tile(request: Request,current_user: int = Depends(oauth2.ge
     format = params.get("format")
 
     if not (TILEMATRIX and TILEMATRIXSET and TILECOL and TILEROW and format):
-        raise HTTPException(status_code=400, detail="TILEMATRIX, TILEMATRIXSET, TILECOL, TILEROW, and format are required parameters")
+        raise HTTPException(
+            status_code=400,
+            detail="TILEMATRIX, TILEMATRIXSET, TILECOL, TILEROW, and format are required parameters",
+        )
 
     geoserver_url = f"{GEOSERVER_URL}/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER={workspaceName}:{layerName}"
     if STYLE:
@@ -86,14 +94,17 @@ async def get_vector_tile(request: Request,current_user: int = Depends(oauth2.ge
 
     response = requests.get(geoserver_url)
     # Bad request check
-    if response.status_code == 403:  
+    if response.status_code == 403:
         raise HTTPException(status_code=400, detail="Bad Request")
     # Raise an exception if the request failed
     response.raise_for_status()
     return Response(content=response.content, media_type="application/octet-stream")
+
+
 # http://dev.geoserver.tosca.dcs.hcu-hamburg.de/geoserver/gwc/service/wmts?REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0&LAYER=public:parcelEimsbuttel3857&STYLE=&TILEMATRIX=EPSG:900913:16&TILEMATRIXSET=EPSG:900913&TILECOL=34585&TILEROW=21179&format=application/vnd.mapbox-vector-tile
 
 GEOSERVER_REST_URL = "http://dev.geoserver.tosca.dcs.hcu-hamburg.de/geoserver/rest"
+
 
 @router.get("/geoserver/roles")
 async def get_geoserver_roles():

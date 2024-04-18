@@ -1,19 +1,18 @@
 from geojson_pydantic import Feature
-from pydantic import BaseModel,field_validator,Field
+from pydantic import BaseModel, field_validator, Field
+
 
 class FilterFeatureCollection(BaseModel):
     type: str
     features: list[Feature] = Field(min_items=1)
     union: bool
-    tableName:str='parcel'
+    tableName: str = "parcel"
+
     @field_validator("type")
     def validate_type(cls, value):
         if value != "FeatureCollection":
             raise ValueError("Invalid 'type' value. Expected 'FeatureCollection'.")
         return value
-
-
-
 
 
 """
