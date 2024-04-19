@@ -44,10 +44,9 @@ Sample object"
         geometry_id = tuple(data.geometry)
         criteria = data.criteria
         metric = data.metric
-        if not geometry_id:
-            raise HTTPException(status_code=400, detail="No geometry id provided")
-
-        where_clauses.append(f" gid in {geometry_id}")
+        
+        if geometry_id:
+            where_clauses.append(f" gid in {geometry_id}")
         if criteria:
             criteria_sql = generate_criteria_sql(criteria)
             where_clauses.append(criteria_sql)
@@ -62,6 +61,7 @@ Sample object"
         sql_query += " and ".join(where_clauses)
         sql_answer = database.execute_sql_query(sql_query)
         raw_data = sql_answer.fetchone()
+        print(f'{len(raw_data[0]["features"])} features found.')
         return raw_data[0]
     except ValueError as e:
         # Handle data validation errors
