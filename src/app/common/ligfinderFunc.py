@@ -39,10 +39,13 @@ def generate_criteria_sql(criteria):
     if not included and excluded:
         return ""
     # merge oll included and excluded clauses to one where clause
-    included_clause = " OR ".join(included)
-    excluded_clause = " OR ".join(excluded)
-    where_clauses.append(f"({excluded_clause})")
-    where_clauses.append(f"({included_clause})")
+    if excluded:
+        excluded_clause = " OR ".join(excluded)
+        where_clauses.append(f"({excluded_clause})")
+    if included:
+        included_clause = " OR ".join(included)
+        where_clauses.append(f"({included_clause})")
+    
     # (excluded_clause) or (included_clause
     where_clause_str = " OR ".join(where_clauses)
     return where_clause_str

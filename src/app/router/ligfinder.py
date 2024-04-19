@@ -56,17 +56,22 @@ Sample object"
                 metric_sql_query.append(
                     f"{metric[i].column} {metric[i].operation} {metric[i].value}"
                 )
-            metric_sql_query = " AND ".join(metric_sql_query)
+            metric_sql_query = "(" +" AND ".join(metric_sql_query) + ")"
             where_clauses.append(metric_sql_query)
-        sql_query += " and ".join(where_clauses)
+        sql_query += " AND ".join(where_clauses)
         sql_answer = database.execute_sql_query(sql_query)
         raw_data = sql_answer.fetchone()
+        if not raw_data[0]["features"]:
+            return {
+            "type": "FeatureCollection",
+            "features": []
+            }
         print(f'{len(raw_data[0]["features"])} features found.')
         return raw_data[0]
     except ValueError as e:
         # Handle data validation errors
         raise HTTPException(
-            status_code=400, detail=f"An ValueError error occurred: {e}"
+            status_code=400, detail=f"An ValueError error occurred: {e}" 
         )
     except Exception as e:  # Catch generic errors
         raise HTTPException(

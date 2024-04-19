@@ -14,10 +14,11 @@ def intersect_geodataframe(input_geodataframe):
     intersection = geometries[0]
     for geometry in geometries[1:]:
         if not intersection.intersects(geometry):
-            return False
+            return []
         intersection = intersection.intersection(geometry)
 
-    intersection_gdf = gpd.GeoDataFrame(
-        geometry=[intersection], crs=input_geodataframe.crs
-    )
+    # Why we don't use this dataframe
+    # intersection_gdf = gpd.GeoDataFrame(
+    #     geometry=[intersection], crs=input_geodataframe.crs
+    # )
     return intersection

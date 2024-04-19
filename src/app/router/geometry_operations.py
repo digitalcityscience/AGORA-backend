@@ -11,6 +11,8 @@ import app.common.geopandsFuncs as geopandsFuncs
 router = APIRouter(prefix="/geometry", tags=["geometryOperations"])
 
 
+
+
 @router.post("/filter", status_code=status.HTTP_201_CREATED)
 def geo_filter(data: FilterFeatureCollection = Body(...)):
     try:
@@ -20,17 +22,14 @@ def geo_filter(data: FilterFeatureCollection = Body(...)):
         else:
             input_geometry = geopandsFuncs.intersect_geodataframe(gdf)
             if not input_geometry:
-                raise HTTPException(
-                    status_code=409, detail="Geometry does not intersect"
-                )
-
+                return Response(status_code=status.HTTP_409_CONFLICT)
         sql_query = """
             SELECT json_build_object('gids', json_agg(gid)) AS result
             FROM %s AS p
             WHERE ST_Intersects(p.geom, ST_GeomFromGeoJSON('%s') );
             """ % (
             data.tableName,
-            json.dumps(input_geometry.__geo_interface__),
+            json.dumps(input_geometry.__geo_interface__)
         )
         sql_answer = database.execute_sql_query(sql_query)
         # we get the first row of the result which is geojson
