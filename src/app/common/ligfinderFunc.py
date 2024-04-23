@@ -13,8 +13,6 @@ def generate_criteria_sql(criteria):
     Returns:
         str: The generated SQL WHERE clause (empty string if no criteria).
     """
-    # print("from func")
-    # print(criteria)
     included = []
     excluded = []
     where_clauses = []
@@ -47,5 +45,5 @@ def generate_criteria_sql(criteria):
         where_clauses.append(f"({included_clause})")
     
     # (excluded_clause) or (included_clause
-    where_clause_str = " OR ".join(where_clauses)
+    where_clause_str = " AND ".join(where_clauses)
     return where_clause_str
