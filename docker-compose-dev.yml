@@ -63,7 +63,7 @@ services:
       - agora_network
 
   api:
-    image: agora-api-image:dev-latest # Assuming you've built this image
+    image: agora-api-image:latest # Assuming you've built this image
     container_name: agora-dev-api
     depends_on:
       - db

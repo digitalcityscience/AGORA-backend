@@ -1,3 +1,7 @@
+## restore DB
+
+docker exec -it agora-dev-db bash -c "PGPASSWORD='agora' pg_restore -h localhost -p 5432 -U agora -d agora /tmp/dump.tar"
+
 \*\*1- db yi ligfinder verileri ile ayaga kaldiralim
 \*\*2- docker exec ile fastapi yapisinin temellerini atalim
 

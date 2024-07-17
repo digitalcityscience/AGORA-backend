@@ -23,3 +23,4 @@ class TableRequest(BaseModel):
     geometry: Optional[List[Any]]
     criteria: Optional[List[CriteriaObject]]
     metric: Optional[List[MetricCriteria]]
+    table_name: Optional[str] = "parcel"
