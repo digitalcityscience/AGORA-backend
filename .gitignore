@@ -80,3 +80,4 @@ Pipfile.lock
 *.bashrc
 *.local
 *.python_history
+server.md
