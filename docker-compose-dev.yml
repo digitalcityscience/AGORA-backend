@@ -1,50 +1,3 @@
-# version: "3.3"
-# volumes:
-#   agora-dev-db-data:
-# services:
-#   db:
-#     image: kartoza/postgis:15-3.3
-#     container_name: agora-dev-db
-#     volumes:
-#       - agora-dev-db-data:/var/lib/postgresql
-#     ports:
-#       - 5434:5432
-#     environment:
-#       - POSTGRES_DB=${DATABASE_NAME}
-#       - POSTGRES_USER=${DATABASE_USERNAME}
-#       - POSTGRES_PASS=${DATABASE_PASSWORD}
-#       - FORCE_SSL=FALSE
-#     restart: on-failure
-#     networks:
-#       - agora_network
-#   api:
-#     container_name: agora-dev-api
-#     build: ./src/docker-python-env/.
-#     image: agora-api-image:dev-latest
-#     # command: |
-#     #   bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; poetry config virtualenvs.create false && uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
-#     command: |
-#       bash -c '
-#       cd /src &&
-#       while !</dev/tcp/db/5432; do sleep 1; done &&
-#       poetry config virtualenvs.create false &&
-#       uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
-
-#     volumes:
-#       - ./src:/src
-#     environment:
-#       - WORKING_DIR=/src
-#     ports:
-#       - 8002:8000
-#     networks:
-#       - agora_network
-
-#   networks:
-#     agora_network:
-#       driver: bridge
-
-version: "3.3"
-
 services:
   db:
     image: kartoza/postgis:15-3.3
@@ -81,6 +34,22 @@ services:
       - 8002:8000
     networks:
       - agora_network
+  geoserver:
+    # build: ./geoserver
+    image: agora-geoserver:2.24.4
+    container_name: agora-geoserver-dev-container
+    environment:
+      - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
+      - GEOSERVER_ADMIN_PASSWORD=geoserver2
+    volumes:
+      - agora-geoserver-data-dev:/geoserver_data/data
+      - /home/ortak/Desktop/sandbox/tosca-geoserver-postgis-test/docker-geoserver/geo-data:/mnt/data
+      - /home/ortak/Desktop/HCU/LIG/data:/mnt/LIG
+    ports:
+      - ${GEOSERVER_PORT}:8080
+    networks:
+      - agora_network
+
 
 networks:
   agora_network:
@@ -88,3 +57,4 @@ networks:
 
 volumes:
   agora-dev-db-data:
+  agora-geoserver-data-dev:
