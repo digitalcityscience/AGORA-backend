@@ -1,0 +1,62 @@
+services:
+  db:
+    image: kartoza/postgis:15-3.3
+    container_name: agora-prod-db
+    volumes:
+      - agorabackend_agora-dev-db-data:/var/lib/postgresql
+      - ./database/dumps:/var/lib/postgresql/dumps
+    ports:
+      - 5434:5432 # Map host port 5434 to container port 5432
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASS=${DATABASE_PASSWORD}
+      - FORCE_SSL=FALSE
+    restart: on-failure
+    networks:
+      - agora_network
+
+  api:
+    image: agora-api-image:latest # Assuming you've built this image
+    container_name: agora-prod-api
+    depends_on:
+      - db
+    command: |
+      bash -c '
+      cd /src &&
+      while !</dev/tcp/db/5432; do sleep 1; done &&
+      poetry config virtualenvs.create false &&
+      uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
+    volumes:
+      - ./src:/src
+    environment:
+      - WORKING_DIR=/src
+    ports:
+      - 8002:8000
+    networks:
+      - agora_network
+  geoserver:
+    # build: ./geoserver
+    image: agora-geoserver:2.24.4
+    container_name: agora-geoserver-prod-container
+    environment:
+      - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
+      - GEOSERVER_ADMIN_PASSWORD=geoserver2
+    volumes:
+      - agora-geoserver-data-prod:/geoserver_data/data
+      - /home/ortak/Desktop/sandbox/tosca-geoserver-postgis-test/docker-geoserver/geo-data:/mnt/data
+      - /home/ortak/Desktop/HCU/LIG/data:/mnt/LIG
+    ports:
+      - ${GEOSERVER_PORT}:8080
+    networks:
+      - agora_network
+
+
+networks:
+  agora_network:
+    driver: bridge
+
+volumes:
+  agorabackend_agora-dev-db-data: 
+    external: true  
+  agora-geoserver-data-prod:
