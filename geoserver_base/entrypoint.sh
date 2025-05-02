@@ -13,7 +13,7 @@ if [ "${GEOSERVER_CORS_ENABLED}" = "true" ] || [ "${GEOSERVER_CORS_ENABLED}" = "
     echo "Enable CORS for $CATALINA_HOME/webapps/geoserver/WEB-INF/web.xml"
     sed -i "\:</web-app>:i\\
     <filter>\n\
-      <filter-name>CorsFilter</filter-name>\n\
+      <filter-name>DockerGeoServerCorsFilter</filter-name>\n\
       <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>\n\
       <init-param>\n\
           <param-name>cors.allowed.origins</param-name>\n\
@@ -41,7 +41,7 @@ if [ "${GEOSERVER_CORS_ENABLED}" = "true" ] || [ "${GEOSERVER_CORS_ENABLED}" = "
       </init-param>\n\
     </filter>\n\
     <filter-mapping>\n\
-      <filter-name>CorsFilter</filter-name>\n\
+      <filter-name>DockerGeoServerCorsFilter</filter-name>\n\
       <url-pattern>/*</url-pattern>\n\
     </filter-mapping>" "$CATALINA_HOME/webapps/geoserver/WEB-INF/web.xml";
   fi

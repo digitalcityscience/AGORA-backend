@@ -74,3 +74,7 @@ FUTURE TASK
   - auth/verify-email
 
 - `logger = logging.getLogger(__name__) kullanimini ogren`
+
+
+-- cors error solution
+https://github.com/kartoza/docker-geoserver/blob/develop/build_data/web.xml
