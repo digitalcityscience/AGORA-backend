@@ -20,7 +20,7 @@ router = APIRouter(prefix="/administrative", tags=["administrative"])
 
 
 class TargetColumn(BaseModel):
-    name: str = "gid"
+    name: str = "id"
     target_value_list: list[int]
 
 
