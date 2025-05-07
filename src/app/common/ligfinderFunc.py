@@ -1,46 +1,47 @@
 def generate_criteria_sql(criteria):
-    """
-    Generates SQL WHERE clause based on the provided criteria.
-
-    Args:
-        criteria (list): List of criteria objects with the following structure:
-            - status (str): "included" or "excluded"
-            - data:
-                - type (str): "value" or "prozent" (percent).
-                - column (list[str]): Column names for the criteria.
-                - value (str, optional): Value for "value" type criteria.
-
-    Returns:
-        str: The generated SQL WHERE clause (empty string if no criteria).
-    """
     included = []
     excluded = []
     where_clauses = []
 
-    for criterion in criteria:
-        if criterion.status == "included":
-            for column in criterion.data.column:
-                if criterion.data.type == "value":
-                    included.append(f"{column} = '{criterion.data.value}'")
-                elif criterion.data.type == "prozent":
-                    included.append(f"{column} > 0")
-        elif criterion.status == "excluded":
-            for column in criterion.data.column:
-                if criterion.data.type == "value":
-                    excluded.append(f"{column} IS DISTINCT FROM '{criterion.data.value}'")
-                elif criterion.data.type == "prozent":
-                    excluded.append(f"{column} IN (0, null)")
+    for item in criteria:
+        data = item.data  # data type dict 
+        status = item.status
+        is_included = status == "included"
 
+        clause = None
+
+        # LGB ART (has children => art filter)
+        if "children" in data:
+            art_list = data.get("art", [])
+            if art_list:
+                art_values = ', '.join(f"'{val}'" for val in art_list)
+                clause = f"ARRAY[{art_values}]::text[] && string_to_array(lgb_art_values, ',')"
+
+        # LGB TYP (has typ, no children => typ filter)
+        elif "typ" in data:
+            typ_list = data.get("typ", [])
+            if typ_list:
+                typ_values = ', '.join(f"'{val}'" for val in typ_list)
+                clause = f"ARRAY[{typ_values}]::text[] && string_to_array(lgb_typ_values, ',')"
+
+        # Nutzung
+        elif "nutzungvalue" in data:
+            nutzung_list = data.get("nutzungvalue", [])
+            if nutzung_list:
+                nutzung_values = ', '.join(f"'{val}'" for val in nutzung_list)
+                clause = f"ARRAY[{nutzung_values}]::text[] && string_to_array(nutzart_list_final, ',')"
+
+        # Add to included or excluded lists
+        if clause:
+            if is_included:
+                included.append(clause)
+            else:
+                excluded.append(f"NOT ({clause})")
+
+    # Final SQL
     if included:
-        included_clause = " OR ".join(included)
-        where_clauses.append(f"({included_clause})")
-    
+        where_clauses.append("(" + " OR ".join(included) + ")")
     if excluded:
-        excluded_clause = " OR ".join(excluded)
-        where_clauses.append(f"({excluded_clause})")
-    
-    if not where_clauses:
-        return ""
+        where_clauses.append("(" + " OR ".join(excluded) + ")")
 
-    where_clause_str = " AND ".join(where_clauses)
-    return where_clause_str
+    return " AND ".join(where_clauses)

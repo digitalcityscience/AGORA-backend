@@ -10,7 +10,7 @@ class CriteriaItem(BaseModel):
 
 class CriteriaObject(BaseModel):
     status: str
-    data: CriteriaItem
+    data: dict
 
 
 class MetricCriteria(BaseModel):
@@ -18,9 +18,14 @@ class MetricCriteria(BaseModel):
     operation: str
     value: str
 
+class GRZCriteria(BaseModel):
+    column: str
+    operation: str
+    value: str
 
 class TableRequest(BaseModel):
     geometry: Optional[List[Any]]
     criteria: Optional[List[CriteriaObject]]
     metric: Optional[List[MetricCriteria]]
-    table_name: Optional[str] = "parcel"
+    grz : Optional[List[GRZCriteria]]
+    table_name: Optional[str] = "parcel_grz_29042025"

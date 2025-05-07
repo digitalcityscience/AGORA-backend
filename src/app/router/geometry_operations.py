@@ -9,10 +9,6 @@ from app.models.geometryOperationModel import FilterFeatureCollection
 import app.common.geopandsFuncs as geopandsFuncs
 
 router = APIRouter(prefix="/geometry", tags=["geometryOperations"])
-
-
-
-
 @router.post("/filter", status_code=status.HTTP_201_CREATED)
 def geo_filter(data: FilterFeatureCollection = Body(...)):
     try:
@@ -24,12 +20,12 @@ def geo_filter(data: FilterFeatureCollection = Body(...)):
             if not input_geometry:
                 return Response(status_code=status.HTTP_409_CONFLICT)
         sql_query = """
-            SELECT json_build_object('gids', json_agg(gid)) AS result
-            FROM %s AS p
-            WHERE ST_Intersects(p.geom, ST_GeomFromGeoJSON('%s') );
-            """ % (
-            data.tableName,
-            json.dumps(input_geometry.__geo_interface__)
+        SELECT json_build_object('UUIDs', json_agg("UUID")) AS result
+         FROM %s AS p
+         WHERE ST_Intersects(p.geom, (ST_GeomFromGeoJSON('%s'))::geometry);
+        """ % (
+        data.tableName,
+        json.dumps(input_geometry.__geo_interface__)
         )
         sql_answer = database.execute_sql_query(sql_query)
         # we get the first row of the result which is geojson

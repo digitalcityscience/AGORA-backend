@@ -12,7 +12,7 @@ def get_iso_aoi(mode, lng, lat, time):
         from (SELECT ST_ConcaveHull(ST_Collect(the_geom), 0.9) from pgr_drivingDistance(
               'SELECT gid AS id, source, target, cost_time AS cost FROM %s',
             (SELECT id
-        FROM %s_vertices_pgr 
+        FROM %s_vertices_pgr
         ORDER BY st_setSRID(ST_MakePoint( %s, %s), 4326) <-> %s_vertices_pgr.the_geom
         LIMIT 1),%s, false
       ) AS pt JOIN %s_vertices_pgr rd ON pt.node = rd.id ) as iso;""" % (
