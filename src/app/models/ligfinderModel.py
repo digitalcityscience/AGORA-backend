@@ -29,3 +29,11 @@ class TableRequest(BaseModel):
     metric: Optional[List[MetricCriteria]]
     grz : Optional[List[GRZCriteria]]
     table_name: Optional[str] = "parcel_grz_29042025"
+
+class MaximizerRequest(BaseModel):
+    geometry: Optional[List[Any]]
+    criteria: Optional[List[CriteriaObject]]
+    metric: Optional[List[MetricCriteria]]
+    grz : Optional[List[GRZCriteria]]
+    table_name: Optional[str] = "parcel_grz_29042025"
+    threshold: Optional[float] = 0.0

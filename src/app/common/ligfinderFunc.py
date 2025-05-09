@@ -42,6 +42,6 @@ def generate_criteria_sql(criteria):
     if included:
         where_clauses.append("(" + " OR ".join(included) + ")")
     if excluded:
-        where_clauses.append("(" + " OR ".join(excluded) + ")")
+        where_clauses.append("(" + " AND ".join(excluded) + ")")
 
     return " AND ".join(where_clauses)
