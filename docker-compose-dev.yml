@@ -1,7 +1,8 @@
 services:
   db:
-    image: kartoza/postgis:15-3.3
-    container_name: agora-dev-db
+    # image: kartoza/postgis:15-3.3
+    image: mobilitydb/mobilitydb:15-3.4-master
+    container_name: agora-dev-db-mobility
     volumes:
       - agora-dev-db-data:/var/lib/postgresql
     ports:
@@ -9,7 +10,8 @@ services:
     environment:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
-      - POSTGRES_PASS=${DATABASE_PASSWORD}
+      # - POSTGRES_PASS=${DATABASE_PASSWORD}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - FORCE_SSL=FALSE
     restart: on-failure
     networks:
