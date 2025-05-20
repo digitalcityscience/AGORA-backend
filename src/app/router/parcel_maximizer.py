@@ -20,8 +20,11 @@ def discover_parcel_islands(data: MaximizerRequest = Body(...)):
 
         # Filter by geometry UUIDs if provided
         if data.geometry:
-            geometry_id = tuple(data.geometry)
-            where_clauses.append(f'"UUID" IN {geometry_id}')
+            if len(data.geometry) == 1:
+                where_clauses.append(f""""UUID" = '{data.geometry[0]}'""")
+            else:
+                uuids = ', '.join(f"'{uuid}'" for uuid in data.geometry)
+                where_clauses.append(f""""UUID" IN ({uuids})""")
 
         # Filter by complex LGB/XPlanung-style criteria
         if data.criteria:
@@ -129,7 +132,6 @@ ORDER BY total_area DESC;
 
         # Execute SQL and convert results into GeoJSON
         result = database.execute_sql_query(sql).fetchall()
-
         return {
             "type": "FeatureCollection",
             "features": [
@@ -137,7 +139,7 @@ ORDER BY total_area DESC;
                     "type": "Feature",
                     "geometry": row[3],
                     "properties": {
-                        "cluster_id": row[0],
+                        "id": row[0],
                         "total_area": row[1],
                         "uuids": row[2],
                     },

@@ -21,16 +21,17 @@ def ligfinder_filter(data: TableRequest = Body(...)):
         where_clauses = []
 
         # Geometry UUIDs
-        geometry_id = tuple(data.geometry)
-        if geometry_id:
-            where_clauses.append(f'p."UUID" IN {geometry_id}')
+        if len(data.geometry) == 1:
+            where_clauses.append(f"""p."UUID" = '{data.geometry[0]}'""")
+        else:
+            uuids = ', '.join(f"'{uuid}'" for uuid in data.geometry)
+            where_clauses.append(f"p.\"UUID\" IN ({uuids})")
 
         # Criteria
         if data.criteria:
             criteria_sql = generate_criteria_sql(data.criteria)
             if criteria_sql:
                 where_clauses.append(criteria_sql)
-
         # Metric filters
         if data.metric:
             metric_conditions = [
@@ -38,7 +39,6 @@ def ligfinder_filter(data: TableRequest = Body(...)):
                 for m in data.metric
             ]
             where_clauses.append("(" + " AND ".join(metric_conditions) + ")")
-
         # GRZ filters
         if data.grz:
             grz_conditions = [
@@ -46,19 +46,17 @@ def ligfinder_filter(data: TableRequest = Body(...)):
                 for g in data.grz
             ]
             where_clauses.append("(" + " AND ".join(grz_conditions) + ")")
-
         # Final WHERE clause
         if where_clauses:
             sql_query += " WHERE " + " AND ".join(where_clauses)
 
-        print(f"Constructed SQL Query: {sql_query}")
+        # print(f"Constructed SQL Query: {sql_query}")
         sql_answer = database.execute_sql_query(sql_query)
         raw_data = sql_answer.fetchone()
 
         if not raw_data or not raw_data[0] or not raw_data[0].get("features"):
             return {"type": "FeatureCollection", "features": []}
-
-        print(f'{len(raw_data[0]["features"])} features found.')
+        # print(f'{len(raw_data[0]["features"])} features found.')
         return raw_data[0]
 
     except ValueError as e:
