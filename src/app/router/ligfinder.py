@@ -21,12 +21,14 @@ def ligfinder_filter(data: TableRequest = Body(...)):
         where_clauses = []
 
         # Geometry UUIDs
-        if len(data.geometry) == 1:
+        if len(data.geometry) == 0:
+            pass  # No geometry filter applied
+        elif len(data.geometry) == 1:
             where_clauses.append(f"""p."UUID" = '{data.geometry[0]}'""")
         else:
             uuids = ', '.join(f"'{uuid}'" for uuid in data.geometry)
             where_clauses.append(f"p.\"UUID\" IN ({uuids})")
-
+        print(f"Geometry UUIDs: {data}")
         # Criteria
         if data.criteria:
             criteria_sql = generate_criteria_sql(data.criteria)
@@ -50,7 +52,7 @@ def ligfinder_filter(data: TableRequest = Body(...)):
         if where_clauses:
             sql_query += " WHERE " + " AND ".join(where_clauses)
 
-        # print(f"Constructed SQL Query: {sql_query}")
+        print(f"Constructed SQL Query: {sql_query}")
         sql_answer = database.execute_sql_query(sql_query)
         raw_data = sql_answer.fetchone()
 
