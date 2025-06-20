@@ -19,12 +19,14 @@ def discover_parcel_islands(data: MaximizerRequest = Body(...)):
         where_clauses = []
 
         # Filter by geometry UUIDs if provided
-        if data.geometry:
-            if len(data.geometry) == 1:
-                where_clauses.append(f""""UUID" = '{data.geometry[0]}'""")
-            else:
-                uuids = ', '.join(f"'{uuid}'" for uuid in data.geometry)
-                where_clauses.append(f""""UUID" IN ({uuids})""")
+        # Geometry UUIDs
+        if len(data.geometry) == 0:
+            pass  # No geometry filter applied
+        elif len(data.geometry) == 1:
+            where_clauses.append(f""" "UUID" = '{data.geometry[0]}'""")
+        else:
+            uuids = ', '.join(f"'{uuid}'" for uuid in data.geometry)
+            where_clauses.append(f" \"UUID\" IN ({uuids})")
 
         # Filter by complex LGB/XPlanung-style criteria
         if data.criteria:
@@ -50,7 +52,7 @@ def discover_parcel_islands(data: MaximizerRequest = Body(...)):
 
         # Combine all filters into a single WHERE clause
         final_where = " AND ".join(where_clauses) if where_clauses else "TRUE"
-
+        print(f"Final WHERE clause: {final_where}")
         # SQL query using CTEs to:
         # - Filter parcels
         # - Select edges between touching parcels
@@ -117,16 +119,34 @@ clustered AS (
     SELECT c.component AS cluster_id, n."UUID"
     FROM components c
     JOIN node_ids n ON c.node = n.node_id
+),
+aggregated_clusters AS (
+    SELECT 
+        cl.cluster_id,
+        SUM(f."Shape_Area") AS total_area,
+        STRING_AGG(cl."UUID", ', ') AS uuids,
+        ST_AsGeoJSON(ST_Union(f.geom))::json AS geometry
+    FROM clustered cl
+    JOIN filtered f ON cl."UUID" = f."UUID"
+    GROUP BY cl.cluster_id
+    HAVING SUM(f."Shape_Area") > {data.threshold}
+),
+single_parcels AS (
+    SELECT 
+        ROW_NUMBER() OVER () + (SELECT COALESCE(MAX(cluster_id), 0) FROM aggregated_clusters) AS cluster_id,
+        "Shape_Area" AS total_area,
+        "UUID" AS uuids,
+        ST_AsGeoJSON(geom)::json AS geometry
+    FROM filtered f
+    WHERE NOT EXISTS (
+        SELECT 1 FROM clustered cl WHERE cl."UUID" = f."UUID"
+    )
+    AND "Shape_Area" > {data.threshold}
 )
-SELECT 
-    cl.cluster_id,
-    SUM(f."Shape_Area") AS total_area,
-    STRING_AGG(cl."UUID", ', ') AS uuids,
-    ST_AsGeoJSON(ST_Union(f.geom))::json AS geometry
-FROM clustered cl
-JOIN filtered f ON cl."UUID" = f."UUID"
-GROUP BY cl.cluster_id
-HAVING SUM(f."Shape_Area") > {data.threshold}
+
+SELECT * FROM aggregated_clusters
+UNION ALL
+SELECT * FROM single_parcels
 ORDER BY total_area DESC;
 """
 
