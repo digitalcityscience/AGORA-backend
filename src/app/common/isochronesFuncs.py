@@ -29,13 +29,11 @@ def get_iso_aoi(mode, lng, lat, time):
         if raw_data:
             return raw_data[0]
         else:
-            # Veritabanı sorgusu başarısız oldu
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Veritabanı sorgusu başarısız oldu",
             )
     except Exception as e:
-        # Diğer tüm hatalar için genel bir HTTP 500 hatası fırlat
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Beklenmeyen bir hata oluştu: {e}",
