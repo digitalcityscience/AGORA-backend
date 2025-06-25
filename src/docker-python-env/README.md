@@ -1,62 +1,243 @@
-# Python & Docker Base Environment For New Projects
+# 🚀 AGORA Development Environment – Full Setup Guide
 
-Create a base environment with Python 3.10, conda, mamba, pip, conda-lock, and poetry==1.3.1. This structure allows manipulation of the Docker environment based on the project's needs.
+This guide is designed for new developers joining the AGORA project. It covers setting up the Python backend, dependency management, building API and GeoServer containers, and running everything with Docker Compose in both dev and production modes.
 
-- Dockerfile
-- environment.yml
-- conda-lock.yml # This file will be empty when base image files are first pulled. It should be created by the admin after creating the environment.
-- pyproject.toml
+---
 
-In this structure, while managing libraries with poetry, problematic ones with pip can be added via conda. The versions of used libraries can be pinned with conda-lock.
+## 📚 1. Python API & Dependency Management
 
-Add a library to poetry.lock with `poetry add --lock library_name`. This automatically updates the poetry.toml file.
+AGORA's API is based on Python 3.10 using **Poetry** and **Conda** for dependency management.
 
-If a library is installed with conda, its version is added to the environment.yml file. Then, the conda-lock.yml file is updated with:
+### 📦 Poetry (Recommended)
 
-`conda-lock -f environment.yml --lockfile conda-lock.yml`
+```bash
+poetry add --lock package_name
+poetry update
+```
 
-Both conda-lock.yml and poetry.lock files are crucial for the continuity of the new project after the base project, and they are essential for collaboration with team members. While poetry.lock is automatically updated, conda-lock.yml should be manually updated after changes in environment.yml.
+* Automatically updates `pyproject.toml` and `poetry.lock`
 
-## Example Scenario-1
+### 🐍 Conda (for system-level or pip-incompatible packages)
 
-In this example project, FastAPI will be used. Necessary libraries for FastAPI will be installed with poetry, and problematic ones with pip will be installed with conda. The versions of these libraries will be pinned using poetry-lock and conda-lock.
+```bash
+conda install some_package=version
+conda env export --from-history > environment.yml
+conda-lock -f environment.yml --lockfile conda-lock.yml
+```
 
-To ensure 100% compatibility between libraries, a base image will be created from the Dockerfile, and a container will be created from this Docker image. Essential libraries will then be installed using poetry and conda. After these installations, all containers created from this Dockerfile will have the same libraries.
+> Always run the image update script after changes:
 
-- In CMD, go to your Dockerfile Path
-- `docker build . -t ubuntu22-python310-base`
-- `docker run --rm -it -e SHELL=/bin/bash -v full_path_of_Dockefile_in_your_local:/home/{userNameInDockerFile}/ ubuntu22-python310-base bash `
-- Pay attention to the volumes defined with `-v`, both locally and within the container. The paths you specify are important.
-- With the `--rm` option, the container will be automatically deleted when you exit the CMD of this container. You can read details about this in the second scenario.
-- After entering the container's CMD, navigate to the specified path, `cd /home/{userNameInDockerFile}/`, and start installing the libraries.
-- Install a library with `poetry add --lock library_name`
-- Then `poetry update`
-- Install a library with `conda install library_name=version_number`
-- Update environment.yml with `library_name=version_number`
-- Update conda-lock.yml with `conda-lock -f environment.yml --lockfile conda-lock.yml`
+```bash
+./src/docker-python-env/create_docker_image.sh
+```
 
-Since these operations are performed in the Dockerfile's directory, all changes will be automatically saved. Consequently, all containers created from this Docker file will have the installed libraries.
+---
 
-For instance, if you need lib_xx for a new feature in the API, after installing it with poetry or conda, and making necessary changes, if your team members update the dev-branch files and create a new container from this Dockerfile, this container will also have lib_xx.
+## 🧱 2. How the `agora-api-image:latest` is Created
 
-## Example Scenario-2
+### 🔁 Automatic Image Update Script
 
-You may want to create a local container structure for yourself from this base environment. In this case, you can keep using the image you created from the Dockerfile, and it will be persistent in your system.
+**Path:**
 
-- In CMD, go to your Dockerfile Path
-- `docker build . -t ubuntu22-python310-base`
-- `docker run --name define_spesific_name_for_container -it -e SHELL=/bin/bash -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 -v full_path_of_Dockefile_in_your_local:/home/{userNameInDockerFile}/ ubuntu22-python310-base bash`
-- Replace `define_spesific_name_for_container` with a specific name for the container.
-- After creating the container, perform the library installation steps seen in **_scenario-1._**
-- After finishing your work with the container, close the CMD window, and check your system's containers with `docker ps -a`. You should see `define_spesific_name_for_container`.
-- If you want to reuse the same container, use `docker start define_spesific_name_for_container && docker exec -it define_spesific_name_for_container bash` to access the CMD of the container.
+```bash
+./src/docker-python-env/create_docker_image.sh
+```
 
-Source links:
+**Logic:**
 
-- https://stackoverflow.com/questions/70851048/does-it-make-sense-to-use-conda-poetry
-- https://stackoverflow.com/questions/77269724/conda-lock-not-working-just-returns-help-info-on-my-macos-sonoma
-- https://github.com/pangeo-data/pangeo-docker-images/blob/master/base-image/Dockerfile
-- https://github.com/tiangolo/full-stack-fastapi-postgresql/blob/master/src/backend/backend.dockerfile
-- https://pythonspeed.com/articles/conda-dependency-management/
-- https://blogs.sap.com/2022/05/08/why-you-should-use-poetry-instead-of-pip-or-conda-for-python-projects/
-- https://michhar.github.io/2023-07-poetry-with-conda/
+```bash
+if git diff --exit-code pyproject.toml environment.yml; then
+  echo "No changes in dependencies. Skipping image update."
+  exit 0
+else
+  docker commit agora-dev-api agora-api-image:latest
+fi
+```
+
+This script ensures that the Docker image is updated only when library dependencies change. All developers and CI pipelines should use this.
+
+---
+
+## 🌍 3. GeoServer Container Setup
+
+AGORA uses a modular GeoServer build system with plugin support and custom CORS configuration.
+
+### 📁 Structure
+
+```
+geoserver_agora/
+├── plugins/                  # Plugin jars
+├── Dockerfile                # Final image using base + plugins
+├── download_plugins.sh
+
+geoserver_base/
+├── Dockerfile                # Base image
+├── entrypoint.sh             # Startup logic
+├── production_web.xml        # CORS etc.
+├── set_geoserver_auth.sh     # Admin credentials
+├── tasks.py                  # (Optional)
+```
+
+### 🏗 1. Build Base Image
+
+```bash
+cd geoserver_base/
+docker build -t dcs-base-geoserver:2.24.4 .
+```
+
+### 📦 2. Download Plugins
+
+```bash
+cd geoserver_agora/
+chmod +x download_plugins.sh
+./download_plugins.sh "2.24.4" "mbstyle vectortiles"
+```
+
+> ⚠️ Warning: `plugins/` will be wiped before downloading.
+
+### 🚀 3. Build AGORA GeoServer Image
+
+```bash
+docker build . -t agora-geoserver:2.24.4
+```
+
+---
+
+## 🐳 4. Dev Image: Building & Running
+
+To build and run the full dev environment:
+
+```bash
+chmod +x build_dev_container.sh
+./build_dev_container.sh
+```
+
+Which runs:
+
+```bash
+docker compose -f docker-compose-dev.yml --env-file src/app/.env up -d --build
+```
+
+### ⚠️ Reminder
+
+If you make any changes to dependencies in the API (`pyproject.toml` or `environment.yml`), you must run:
+
+```bash
+./src/docker-python-env/create_docker_image.sh
+```
+
+This ensures the dev image reflects those changes.
+
+---
+
+## ⚙️ 5. Docker Compose (Dev & Prod)
+
+### 🔧 Dev Mode
+
+```bash
+docker compose -f docker-compose-dev.yml --env-file src/app/.env up -d
+```
+
+### 🚀 Production Mode
+
+```bash
+docker compose -f docker-compose-prod.yml --env-file src/app/.env up -d
+```
+
+### 📁 Example `.env`
+
+> 📌 **Note:** The `.env` file must be located at:
+>
+> ```
+> src/app/.env
+> ```
+>
+> This path is used by both `docker-compose-dev.yml` and `docker-compose-prod.yml`. A template is available at:
+>
+> ```
+> src/app/.env.example
+> ```
+
+> ⚠️ **GeoServer Notice:**
+> While the values like `GEOSERVER_ADMIN_USER`, `GEOSERVER_ADMIN_PASSWORD`, and `GEOSERVER_PORT` listed below **are used** by the GeoServer container via `docker-compose`, the CORS-related variables such as `GEOSERVER_CORS_ENABLED`, `GEOSERVER_CORS_ALLOWED_ORIGINS`, etc., are **not automatically passed into the container unless explicitly wired** in the Dockerfile or `entrypoint.sh`.
+>
+> If you want to change GeoServer's credentials, port, or enable specific behavior (like CORS), make sure to:
+>
+> * Update the `docker-compose` service definition if needed.
+> * Modify `geoserver_base/Dockerfile` or related shell scripts to reflect persistent changes.
+> * Rebuild the image to apply Dockerfile-level overrides.
+
+```env
+DATABASE_HOSTNAME=db
+DATABASE_PORT=5432
+DATABASE_NAME=agora
+DATABASE_USERNAME=agora
+DATABASE_PASSWORD=agora
+
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=760
+REFRESH_TOKEN_EXPIRE_MINUTES=1000
+
+GEOSERVER_ADMIN_USER=admin
+GEOSERVER_ADMIN_PASSWORD=geoserver2
+GEOSERVER_PORT=8383
+GEOSERVER_CORS_ENABLED=True
+GEOSERVER_CORS_ALLOWED_ORIGINS=*
+GEOSERVER_CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,HEAD,OPTIONS
+GEOSERVER_CORS_ALLOWED_HEADERS=*
+GEOSERVER_CSRF_DISABLED=true
+```
+
+---
+
+## 📁 6. API Code Structure
+
+```
+app/
+├── auth/         # Login, Register, Token
+├── db/           # SQLAlchemy + GeoAlchemy2 models
+├── geoserver/    # GeoServer REST API integration
+├── ligfinder/    # Spatial analysis module
+├── utils/        # Shared helpers
+└── main.py       # FastAPI entry point
+```
+
+---
+
+## 🧪 7. Dev Utilities
+
+* Enter API container:
+
+```bash
+docker exec -it agora-dev-api bash
+```
+
+* Restart only the API:
+
+```bash
+docker compose restart api
+```
+
+* Tail logs:
+
+```bash
+docker logs -f agora-dev-api
+```
+
+---
+
+## ✅ 8. Production Deployment Note
+
+In production, the API container directly mounts the `src/` directory from the main repository.
+
+> **To reflect new changes, you must log into the production server and run:**
+>
+> ```bash
+> git pull
+> ```
+>
+> This ensures the latest codebase is updated inside the container.
+> Since the container uses the mounted `src/` folder directly, no rebuild is required after pulling updates. Just make sure to test changes in dev before pushing to production..
+
+> **This means any changes pushed to the `src/` codebase on the server are immediately reflected in production.** No rebuild is required for logic changes. Be careful and always test on dev first.

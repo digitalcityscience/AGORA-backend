@@ -41,7 +41,7 @@ services:
     container_name: agora-geoserver-prod-container
     environment:
       - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
-      - GEOSERVER_ADMIN_PASSWORD=geoserver2
+      - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_ADMIN_PASSWORD}
     volumes:
       - agora-geoserver-data-prod:/geoserver_data/data
       - /home/ortak/Desktop/sandbox/tosca-geoserver-postgis-test/docker-geoserver/geo-data:/mnt/data

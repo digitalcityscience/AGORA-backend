@@ -146,6 +146,22 @@ docker compose -f docker-compose-prod.yml --env-file src/app/.env up -d
 
 ### 📁 Example `.env`
 
+> 📌 **Note:** The `.env` file must be located at:
+>
+> ```
+> src/app/.env
+> ```
+>
+> This path is used by both `docker-compose-dev.yml` and `docker-compose-prod.yml`. A template is available at:
+>
+> ```
+> src/app/.env.example
+> ```
+
+> ⚠️ **GeoServer Notice:**
+> Environment variables such as `GEOSERVER_ADMIN_USER` and `GEOSERVER_ADMIN_PASSWORD` **are used** by the GeoServer container **only if declared in your docker-compose file.**
+> However, CORS-related settings (like `GEOSERVER_CORS_ALLOWED_ORIGINS`, etc.) must be set manually in `geoserver_base/Dockerfile` and rebuilt accordingly.
+
 ```env
 DATABASE_HOSTNAME=db
 DATABASE_PORT=5432
@@ -217,6 +233,77 @@ In production, the API container directly mounts the `src/` directory from the m
 > ```
 >
 > This ensures the latest codebase is updated inside the container.
-> Since the container uses the mounted `src/` folder directly, no rebuild is required after pulling updates. Just make sure to test changes in dev before pushing to production..
+> Since the container uses the mounted `src/` folder directly, no rebuild is required after pulling updates. Just make sure to test changes in dev before pushing to production.
 
-> **This means any changes pushed to the `src/` codebase on the server are immediately reflected in production.** No rebuild is required for logic changes. Be careful and always test on dev first.
+---
+
+## 💾 9. PostgreSQL Backup & Restore
+
+This section explains how to take backups from **production** and restore them on **development**. This is the preferred way to replicate the live environment locally.
+
+### 🔄 Recommended Workflow (from production → dev)
+
+#### 1. Take a Backup on Production Server (Tar Format)
+
+If a volume is mounted like:
+
+```yaml
+volumes:
+  - ./database/dumps:/var/lib/postgresql/dumps
+```
+
+Then simply run:
+
+```bash
+docker exec -it agora-dev-db bash -c "pg_dump -U agora -F t -f /var/lib/postgresql/dumps/dump-$(date +%Y%m%d%H%M).tar agora"
+```
+
+> This creates a file like `dump-202506241446.tar` inside `./database/dumps` on host.
+
+If you **do not mount a volume**, you must copy the file manually:
+
+```bash
+docker cp agora-dev-db:/tmp/dump.tar ./dump-202506241446.tar
+```
+
+#### ⚠️ Important: GUI Tool Notes (e.g., DBeaver)
+
+You can use GUI tools like **DBeaver** for backup and restore **only if you also use the same tool for both actions**. That means:
+
+* If you **export via DBeaver**, you must **import again via DBeaver GUI**.
+* Do **not** mix GUI-generated exports with CLI tools like `pg_restore`.
+
+Incompatibilities may otherwise occur, such as:
+
+* `pg_restore: error: unsupported version (1.16) in file header`
+* `ERROR: unrecognized configuration parameter "transaction_timeout"`
+
+✅ **Preferred: use `pg_dump` and `pg_restore` directly inside containers**.
+
+---
+
+#### 2. Restore into Dev DB
+
+Preferred approach if volume is already mounted:
+
+```yaml
+volumes:
+  - ./database/dumps:/var/lib/postgresql/dumps
+```
+
+Then place your backup file under `./database/dumps/` and run:
+
+```bash
+docker exec -it agora-dev-db bash -c "PGPASSWORD='agora' pg_restore -U agora -h localhost -p 5432 -d agora -c -v /var/lib/postgresql/dumps/dump-202506241446.tar"
+```
+
+Alternative if no volume is mounted:
+
+```bash
+docker cp ./dump-202506241446.tar agora-dev-db:/tmp/dump.tar
+
+docker exec -it agora-dev-db bash -c "PGPASSWORD='agora' pg_restore -U agora -h localhost -p 5432 -d agora -c -v /tmp/dump.tar"
+```
+
+
+---

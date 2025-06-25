@@ -1,8 +1,7 @@
 services:
   db:
-    # image: kartoza/postgis:15-3.3
-    image: mobilitydb/mobilitydb:15-3.4-master
-    container_name: agora-dev-db-mobility
+    image: kartoza/postgis:15-3.3
+    container_name: agora-dev-db-kartoza
     volumes:
       - agora-dev-db-data:/var/lib/postgresql
     ports:
@@ -10,7 +9,6 @@ services:
     environment:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
-      # - POSTGRES_PASS=${DATABASE_PASSWORD}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - FORCE_SSL=FALSE
     restart: on-failure
@@ -42,7 +40,7 @@ services:
     container_name: agora-geoserver-dev-container
     environment:
       - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
-      - GEOSERVER_ADMIN_PASSWORD=geoserver2
+      - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_ADMIN_PASSWORD}
     volumes:
       - agora-geoserver-data-dev:/geoserver_data/data
       - /home/ortak/Desktop/sandbox/tosca-geoserver-postgis-test/docker-geoserver/geo-data:/mnt/data
