@@ -1,6 +1,8 @@
 #!/bin/sh 
 
-GEOSERVER_CONTAINER_NAME='agora-geoserver-dev-container'
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+
+GEOSERVER_CONTAINER_NAME=$1
 BACKUP_DIR="geoserver_backup"
 BACKUP_NAME="geoserver-backup-${TIMESTAMP}.tar.gz"
 TEMP_DIR="${BACKUP_DIR}/temp-${TIMESTAMP}"
