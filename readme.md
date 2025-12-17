@@ -307,3 +307,9 @@ docker exec -it agora-dev-db bash -c "PGPASSWORD='agora' pg_restore -U agora -h 
 
 
 ---
+
+
+# 10. Restore & Backup geoserver
+
+1. `sh backup_geoserver.sh` to create a backup of the geoserver data. This creates a tar.gz of all relevant geoserver content in the geoserver_backup folder
+2. `sh restore_geoserver FILENAME` (e.g. `sh restore_geoserver geoserver-backup-20251217_143039`, without extensions!) to restore the content of the geoserver 
