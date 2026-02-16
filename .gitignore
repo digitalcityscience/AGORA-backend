@@ -81,3 +81,10 @@ Pipfile.lock
 *.local
 *.python_history
 server.md
+
+
+geoserver_backup/*
+!geoserver_backup/.gitkeep
+
+geoserver_agora/*.zip
+geoserver_agora/*.zip.1

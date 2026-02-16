@@ -82,7 +82,7 @@ geoserver_base/
 
 ```bash
 cd geoserver_base/
-docker build -t dcs-base-geoserver:2.24.4 .
+docker build -t dcs-base-geoserver:2.25.6 .
 ```
 
 ### 📦 2. Download Plugins
@@ -90,7 +90,7 @@ docker build -t dcs-base-geoserver:2.24.4 .
 ```bash
 cd geoserver_agora/
 chmod +x download_plugins.sh
-./download_plugins.sh "2.24.4" "mbstyle vectortiles"
+./download_plugins.sh "2.25.6" "mbstyle vectortiles"
 ```
 
 > ⚠️ Warning: `plugins/` will be wiped before downloading.
@@ -98,7 +98,7 @@ chmod +x download_plugins.sh
 ### 🚀 3. Build AGORA GeoServer Image
 
 ```bash
-docker build . -t agora-geoserver:2.24.4
+docker build . -t agora-geoserver:2.25.6
 ```
 
 ---
@@ -307,3 +307,9 @@ docker exec -it agora-dev-db bash -c "PGPASSWORD='agora' pg_restore -U agora -h 
 
 
 ---
+
+
+# 10. Restore & Backup geoserver
+
+1. `sh backup_geoserver.sh CONTAINER_NAME` (e.g. `sh backup_geoserver.sh agora-geoserver-dev-container`) to create a backup of the geoserver data. This creates a tar.gz of all relevant geoserver content in the geoserver_backup folder
+2. `sh restore_geoserver CONTAINER_NAME FILENAME` (e.g. `sh restore_geoserver agora-geoserver-dev-container geoserver-backup-20251217_143039`, filename of bakcup tar without extensions!) to restore the content of the geoserver 
