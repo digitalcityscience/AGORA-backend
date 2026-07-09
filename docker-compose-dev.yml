@@ -2,10 +2,10 @@
 services:
   db:
     # Main PostGIS database used by the API
-    image: kartoza/postgis:15-3.4
+    image: kartoza/postgis:15-3.3
     container_name: agora-dev-db-kartoza
     volumes:
-      - agora-dev-db-data:/var/lib/postgresql/15
+      - agora-dev-db-data:/var/lib/postgresql
     ports:
       - 5434:5432 # Map host port 5434 to container port 5432
     environment:
