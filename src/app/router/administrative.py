@@ -1,22 +1,17 @@
-from fastapi import APIRouter, Body, status, HTTPException, Response
-from sqlalchemy.orm import Session
-from typing import Optional
+import re
+from fastapi import APIRouter, Body, status, HTTPException
 from pydantic import BaseModel
 import app.auth.database as database
 
-
 router = APIRouter(prefix="/administrative", tags=["administrative"])
-"""
- /list > get 
- return list of all administrative table name in databse with id
- return {"table_name": "staddtile", name:"Staddtile", "id": 1}
 
- /data/:id > post
- id yi alip, tabloya ait tüm verileri döndür
+_SAFE_IDENT = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
 
- /data/:id/:name > post
-    id yi ve name i alip, where= name olan tüm verileri döndür
-"""
+
+def _validate_ident(value: str, label: str) -> str:
+    if not _SAFE_IDENT.match(value):
+        raise ValueError(f"Invalid {label}: {value!r}")
+    return value
 
 
 class TargetColumn(BaseModel):
@@ -36,14 +31,11 @@ administrative_table_list = [
 def get_administrative_tables():
     """
     Get all administrative tables in the database
-    
     """
     try:
         return {"data": administrative_table_list}
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
 @router.get("/data/{table_id}", status_code=status.HTTP_201_CREATED)
@@ -54,13 +46,8 @@ def get_administrative_table_data(table_id: int):
     sample request: {{URL}}/administrative/data/table_id
     """
     try:
-        print("table_id", table_id)
         table_name = next(
-            (
-                item["table_name"]
-                for item in administrative_table_list
-                if item["id"] == table_id
-            ),
+            (item["table_name"] for item in administrative_table_list if item["id"] == table_id),
             None,
         )
         if table_name is None:
@@ -70,46 +57,41 @@ def get_administrative_table_data(table_id: int):
             select json_build_object(
           'type', 'FeatureCollection',
           'features', json_agg(ST_AsGeoJSON(table_name.*)::json)
-          ) 
+          )
             from {table_name} as table_name
         """
-
         sql_answer = database.execute_sql_query(sql_query)
         raw_data = sql_answer.fetchone()
         return raw_data[0]
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
 @router.get("/data/features/{table_id}", status_code=status.HTTP_201_CREATED)
 def get_administrative_feature_data(table_id: int, target_column: TargetColumn):
     try:
-        # Belirtilen table_id'ye göre tablo adını bul
         table_name = next(
-            (
-                item["table_name"]
-                for item in administrative_table_list
-                if item["id"] == table_id
-            ),
+            (item["table_name"] for item in administrative_table_list if item["id"] == table_id),
             None,
         )
         if table_name is None:
             raise HTTPException(status_code=404, detail="Table not found")
-        # SQL sorgusu oluştur
-        tuple_gid = tuple(target_column.target_value_list)
+
+        col = _validate_ident(target_column.name, "column name")
+        params = {f"v{i}": v for i, v in enumerate(target_column.target_value_list)}
+        placeholders = ", ".join(f":v{i}" for i in range(len(params)))
+
         sql_query = f"""
             select json_build_object(
           'type', 'FeatureCollection',
           'features', json_agg(ST_AsGeoJSON(table_name.*)::json)
-          ) 
-            from {table_name} as table_name where {target_column.name} in {tuple_gid}
+          )
+            from {table_name} as table_name where "{col}" in ({placeholders})
         """
-        sql_answer = database.execute_sql_query(sql_query)
+        sql_answer = database.execute_sql_query(sql_query, params)
         raw_data = sql_answer.fetchone()[0]
         return raw_data
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
