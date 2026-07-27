@@ -24,7 +24,7 @@ def get_db():
         db.close()
 
 
-def execute_sql_query(sql_query: str):
+def execute_sql_query(sql_query: str, params: dict = None):
     with engine.connect() as connection:
-        result = connection.execute(text(sql_query))
+        result = connection.execute(text(sql_query), params or {})
         return result
