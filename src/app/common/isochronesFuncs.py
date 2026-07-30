@@ -5,14 +5,6 @@ _ALLOWED_MODES = {"walk_network", "bike_network", "drive_network"}
 
 
 def get_iso_aoi(mode, lng, lat, time):
-    """Return an isochrone area (AOI) as a GeoJSON FeatureCollection.
-
-    Args:
-        mode: Base pgRouting table prefix (for example, road network mode).
-        lng: Longitude of the origin point.
-        lat: Latitude of the origin point.
-        time: Maximum travel-time/cost value used in driving distance.
-    """
     try:
         # mode is used as a table-name identifier in multiple positions — it cannot be
         # parameterised. Validate against the known allowlist before interpolating.
@@ -39,16 +31,10 @@ def get_iso_aoi(mode, lng, lat, time):
         sql_answer = database.execute_sql_query(
             sql_query, {"lng": lng, "lat": lat, "time": time}
         )
-
-        # Execute SQL against the configured database connection.
-        sql_answer = database.execute_sql_query(sql_query)
         raw_data = sql_answer.fetchone()
-
-        # Return the GeoJSON payload if query produced a row.
         if raw_data:
             return raw_data[0]
         else:
-            # Query executed but did not return expected payload.
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Database query failed",
@@ -56,7 +42,6 @@ def get_iso_aoi(mode, lng, lat, time):
     except (ValueError, HTTPException):
         raise
     except Exception as e:
-        # Normalize unexpected runtime/database errors to HTTP 500.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred: {e}",
