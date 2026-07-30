@@ -53,6 +53,8 @@ def get_iso_aoi(mode, lng, lat, time):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Database query failed",
             )
+    except (ValueError, HTTPException):
+        raise
     except Exception as e:
         # Normalize unexpected runtime/database errors to HTTP 500.
         raise HTTPException(

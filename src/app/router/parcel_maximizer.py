@@ -61,9 +61,8 @@ def discover_parcel_islands(data: MaximizerRequest = Body(...)):
             outer_clauses.append(
                 f'"UUID" IN ({", ".join(f":geom_{i}" for i in range(len(geometry)))})'
             )
-            inner_clauses.append(
-                f'"UUID" IN ({", ".join(f"\'{str(u).replace(chr(39), chr(39)*2)}\'" for u in geometry)})'
-            )
+            _quoted_uuids = ", ".join("'" + str(u).replace("'", "''") + "'" for u in geometry)
+            inner_clauses.append(f'"UUID" IN ({_quoted_uuids})')
 
         # Criteria — unpack tuple, build outer (params) and inner (embedded) versions
         if data.criteria:
