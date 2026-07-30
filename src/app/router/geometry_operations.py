@@ -20,9 +20,16 @@ def _validate_ident(value: str, label: str) -> str:
 
 @router.post("/filter", status_code=status.HTTP_201_CREATED)
 def geo_filter(data: FilterFeatureCollection = Body(...)):
+    """Filter parcels by geometry intersection.
+    
+    Accepts GeoJSON features and returns UUIDs of parcels that intersect
+    with either the union or intersection of input geometries.
+    """
     try:
         table = _validate_ident(data.tableName, "tableName")
         gdf = gpd.read_file(data.model_dump_json(), driver="GeoJSON")
+        
+        # Compute target geometry: union (combine all) or intersection (overlap)
         if data.union == True:
             input_geometry = gdf.unary_union
         else:
