@@ -96,14 +96,11 @@ class TestSQLInjection:
 class TestDenialOfService:
 
     def test_sec_08_extremely_long_single_value_is_blocked(self):
-        """Values over DEFAULT_MAX_VALUE_LENGTH are silently dropped by _sanitise_list."""
+        """Values over DEFAULT_MAX_VALUE_LENGTH raise CriteriaLimitExceeded — never silently dropped."""
         long_value = "A" * 100_000
         item = make_item("included", {"children": True, "art": [long_value]})
-        sql, params = generate_criteria_sql([item])
-        assert sql == "", (
-            f"Expected empty result when value exceeds DEFAULT_MAX_VALUE_LENGTH "
-            f"({DEFAULT_MAX_VALUE_LENGTH}), got SQL of length {len(sql)}."
-        )
+        with pytest.raises(CriteriaLimitExceeded):
+            generate_criteria_sql([item])
 
     def test_sec_09_large_list_raises_criteria_limit_exceeded(self):
         """10,000 values in one list raises CriteriaLimitExceeded — never silently truncated."""
