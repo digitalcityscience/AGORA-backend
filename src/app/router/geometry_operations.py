@@ -1,16 +1,21 @@
-"""Geometry operations endpoints for filtering and isochrone calculations."""
-
-from fastapi import APIRouter, Body, status, HTTPException, Response
-from sqlalchemy.orm import Session
+import re
 import json
+from fastapi import APIRouter, Body, status, HTTPException, Response
 import geopandas as gpd
-
 
 from app.auth import database
 from app.models.geometryOperationModel import FilterFeatureCollection
 import app.common.geopandsFuncs as geopandsFuncs
 
 router = APIRouter(prefix="/geometry", tags=["geometryOperations"])
+
+_SAFE_IDENT = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
+
+
+def _validate_ident(value: str, label: str) -> str:
+    if not _SAFE_IDENT.match(value):
+        raise ValueError(f"Invalid {label}: {value!r}")
+    return value
 
 
 @router.post("/filter", status_code=status.HTTP_201_CREATED)
@@ -21,7 +26,7 @@ def geo_filter(data: FilterFeatureCollection = Body(...)):
     with either the union or intersection of input geometries.
     """
     try:
-        # Parse GeoJSON input into GeoPandas GeoDataFrame
+        table = _validate_ident(data.tableName, "tableName")
         gdf = gpd.read_file(data.model_dump_json(), driver="GeoJSON")
         
         # Compute target geometry: union (combine all) or intersection (overlap)
@@ -31,29 +36,20 @@ def geo_filter(data: FilterFeatureCollection = Body(...)):
             input_geometry = geopandsFuncs.intersect_geodataframe(gdf)
             if not input_geometry:
                 return Response(status_code=status.HTTP_409_CONFLICT)
-        
-        # PostgreSQL spatial query: find all parcels intersecting the target geometry
-        sql_query = """
+
+        geom_json = json.dumps(input_geometry.__geo_interface__)
+        sql_query = f"""
         SELECT json_build_object('UUIDs', json_agg("UUID")) AS result
-         FROM %s AS p
-         WHERE ST_Intersects(p.geom, (ST_GeomFromGeoJSON('%s'))::geometry);
-        """ % (
-            data.tableName,
-            json.dumps(input_geometry.__geo_interface__)
-        )
-        sql_answer = database.execute_sql_query(sql_query)
+        FROM {table} AS p
+        WHERE ST_Intersects(p.geom, ST_GeomFromGeoJSON(:geom)::geometry);
+        """
+        sql_answer = database.execute_sql_query(sql_query, {"geom": geom_json})
         raw_data = sql_answer.fetchone()
         return raw_data[0]
     except ValueError as e:
-        # Handle validation errors
-        raise HTTPException(
-            status_code=400, detail=f"An ValueError error occurred: {e}"
-        )
+        raise HTTPException(status_code=400, detail=f"A ValueError error occurred: {e}")
     except Exception as e:
-        # Handle unexpected errors
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 
 from app.models.isochronesModel import IsochroneCreate
@@ -84,14 +80,9 @@ def create_isochrones(data: IsochroneCreate = Body(...)):
         lng = float(center.lng)
         lat = float(center.lat)
         mode = data.mode
-        return get_iso_aoi(mode, lng, lat, time)  # done
+        return get_iso_aoi(mode, lng, lat, time)
 
     except ValueError as e:
-        # Handle data validation errors
-        raise HTTPException(
-            status_code=400, detail=f"An ValueError error occurred: {e}"
-        )
-    except Exception as e:  # Catch generic errors
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {e}"
-        )
+        raise HTTPException(status_code=400, detail=f"An ValueError error occurred: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")

@@ -38,15 +38,7 @@ def get_db():
         db.close()
 
 
-def execute_sql_query(sql_query: str):
-    """Execute raw SQL query and return results.
-    
-    Args:
-        sql_query: Raw SQL query string with optional parameters
-        
-    Returns:
-        SQLAlchemy result object with fetchone(), fetchall() methods
-    """
+def execute_sql_query(sql_query: str, params: dict = None):
     with engine.connect() as connection:
-        result = connection.execute(text(sql_query))
+        result = connection.execute(text(sql_query), params or {})
         return result
