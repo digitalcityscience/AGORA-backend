@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 # ── Import the function under test ─────────────────────────────────────────────
 # Adjust this import to match your project structure
-from ligfinderFunc import generate_criteria_sql
+from .ligfinderFunc import generate_criteria_sql, CriteriaLimitExceeded
 
 
 # ── Helper: build a mock criteria item ────────────────────────────────────────
@@ -35,7 +35,7 @@ class TestEmptyInputs:
         """
         sql, params = generate_criteria_sql([])
         assert sql == "", (
-            f"Expected empty string for empty criteria list, got: '{result}'"
+            f"Expected empty string for empty criteria list, got: '{sql}'"
         )
 
     def test_12_item_with_no_recognised_key_is_skipped(self):
@@ -51,7 +51,7 @@ class TestEmptyInputs:
         item = make_item("included", {"unknown_key": ["value"], "another_key": [1, 2, 3]})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string when no recognised key present, got: '{result}'"
+            f"Expected empty string when no recognised key present, got: '{sql}'"
         )
 
     def test_13_empty_art_list_produces_no_clause(self):
@@ -67,7 +67,7 @@ class TestEmptyInputs:
         item = make_item("included", {"children": True, "art": []})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string for empty art list, got: '{result}'"
+            f"Expected empty string for empty art list, got: '{sql}'"
         )
 
     def test_14_empty_typ_list_produces_no_clause(self):
@@ -81,7 +81,7 @@ class TestEmptyInputs:
         item = make_item("included", {"typ": []})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string for empty typ list, got: '{result}'"
+            f"Expected empty string for empty typ list, got: '{sql}'"
         )
 
     def test_15_empty_nutzung_list_produces_no_clause(self):
@@ -95,7 +95,7 @@ class TestEmptyInputs:
         item = make_item("included", {"nutzungvalue": []})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string for empty nutzungvalue list, got: '{result}'"
+            f"Expected empty string for empty nutzungvalue list, got: '{sql}'"
         )
 
 
@@ -156,7 +156,7 @@ class TestMalformedData:
             sql, params = generate_criteria_sql([item])
             # If it doesn't crash, it should return empty string
             assert sql == "", (
-                f"Expected empty string when data is None, got: '{result}'"
+                f"Expected empty string when data is None, got: '{sql}'"
             )
         except TypeError:
             # Acceptable — the function does not guard against None data.
@@ -183,7 +183,7 @@ class TestMalformedData:
         try:
             sql, params = generate_criteria_sql([item])
             assert sql == "", (
-                f"Expected empty string when data is a string, got: '{result}'"
+                f"Expected empty string when data is a string, got: '{sql}'"
             )
         except (AttributeError, TypeError):
             pytest.xfail(
@@ -203,7 +203,7 @@ class TestMalformedData:
         item = make_item("included", {})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string for empty data dict, got: '{result}'"
+            f"Expected empty string for empty data dict, got: '{sql}'"
         )
 
     def test_20_art_list_contains_none_value(self):
@@ -307,7 +307,7 @@ class TestMalformedData:
         item = make_item("included", {"children": True, "art": None})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string when art value is None, got: '{result}'"
+            f"Expected empty string when art value is None, got: '{sql}'"
         )
 
     def test_22b_typ_value_is_none_not_a_list(self):
@@ -320,7 +320,7 @@ class TestMalformedData:
         item = make_item("included", {"typ": None})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string when typ value is None, got: '{result}'"
+            f"Expected empty string when typ value is None, got: '{sql}'"
         )
 
     def test_22c_nutzung_value_is_none_not_a_list(self):
@@ -333,7 +333,7 @@ class TestMalformedData:
         item = make_item("included", {"nutzungvalue": None})
         sql, params = generate_criteria_sql([item])
         assert sql == "", (
-            f"Expected empty string when nutzungvalue is None, got: '{result}'"
+            f"Expected empty string when nutzungvalue is None, got: '{sql}'"
         )
 
 
@@ -354,7 +354,7 @@ class TestBoundaryValues:
         """
         item = make_item("included", {"children": True, "art": ["W"]})
         sql, params = generate_criteria_sql([item])
-        assert 'W' in params
+        assert 'W' in params.values()
 
     def test_art_value_with_spaces(self):
         """
@@ -366,7 +366,7 @@ class TestBoundaryValues:
         """
         item = make_item("included", {"children": True, "art": ["Allgemeines Grundvermögen"]})
         sql, params = generate_criteria_sql([item])
-        assert 'Allgemeines Grundvermögen' in params
+        assert 'Allgemeines Grundvermögen' in params.values()
 
     def test_art_value_with_special_characters(self):
         """
@@ -379,7 +379,7 @@ class TestBoundaryValues:
         """
         item = make_item("included", {"children": True, "art": ["test-value_123"]})
         sql, params = generate_criteria_sql([item])
-        assert 'test-value_123' in params
+        assert 'test-value_123' in params.values()
 
     def test_large_number_of_art_values(self):
         """
@@ -393,4 +393,4 @@ class TestBoundaryValues:
         item = make_item("included", {"children": True, "art": art_values})
         sql, params = generate_criteria_sql([item])
         for val in art_values:
-            assert val in params, f"Value '{val}' missing from params"
+            assert val in params.values(), f"Value '{val}' missing from params"

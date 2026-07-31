@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 
 # ── Import the function under test ─────────────────────────────────────────────
-from ligfinderFunc import generate_criteria_sql
+from .ligfinderFunc import generate_criteria_sql
 
 
 # ── Helper ─────────────────────────────────────────────────────────────────────
@@ -33,8 +33,9 @@ class TestSingleIncludedClauses:
         item = make_item("included", {"children": True, "art": ["080"]})
         sql, params = generate_criteria_sql([item])
 
-        assert "ARRAY[%s]::text[] && string_to_array(lgb_art_values, ',')" in sql
-        assert "080" in params
+        assert "ARRAY[" in sql
+        assert "::text[] && string_to_array(lgb_art_values, ',')" in sql
+        assert "080" in params.values()
         assert sql.startswith("(")
         assert sql.endswith(")")
 
@@ -48,8 +49,9 @@ class TestSingleIncludedClauses:
         item = make_item("included", {"typ": ["3020"]})
         sql, params = generate_criteria_sql([item])
 
-        assert "ARRAY[%s]::text[] && string_to_array(lgb_typ_values, ',')" in sql
-        assert "3020" in params
+        assert "ARRAY[" in sql
+        assert "::text[] && string_to_array(lgb_typ_values, ',')" in sql
+        assert "3020" in params.values()
 
     def test_3_single_included_nutzung_value(self):
         """
@@ -61,8 +63,9 @@ class TestSingleIncludedClauses:
         item = make_item("included", {"nutzungvalue": ["wohnbauflaeche"]})
         sql, params = generate_criteria_sql([item])
 
-        assert "ARRAY[%s]::text[] && string_to_array(nutzart_list_final, ',')" in sql
-        assert "wohnbauflaeche" in params
+        assert "ARRAY[" in sql
+        assert "::text[] && string_to_array(nutzart_list_final, ',')" in sql
+        assert "wohnbauflaeche" in params.values()
 
     def test_4_single_excluded_art_value(self):
         """
@@ -103,9 +106,9 @@ class TestSingleIncludedClauses:
         item = make_item("included", {"children": True, "art": ["080", "081", "085"]})
         sql, params = generate_criteria_sql([item])
 
-        assert '080' in params
-        assert '081' in params
-        assert '085' in params
+        assert '080' in params.values()
+        assert '081' in params.values()
+        assert '085' in params.values()
 
     def test_multiple_nutzung_values_in_single_item(self):
         """
@@ -117,8 +120,8 @@ class TestSingleIncludedClauses:
         item = make_item("included", {"nutzungvalue": ["wohnbauflaeche", "industrieundgewerbeflaeche"]})
         sql, params = generate_criteria_sql([item])
 
-        assert 'wohnbauflaeche' in params
-        assert 'industrieundgewerbeflaeche' in params
+        assert 'wohnbauflaeche' in params.values()
+        assert 'industrieundgewerbeflaeche' in params.values()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -142,8 +145,8 @@ class TestCombinations:
         ]
         sql, params = generate_criteria_sql(items)
 
-        assert '080' in params
-        assert '081' in params
+        assert '080' in params.values()
+        assert '081' in params.values()
         assert " OR " in sql
         assert "lgb_art_values" in sql
 
@@ -312,8 +315,8 @@ class TestSQLOutputFormat:
         item = make_item("included", {"children": True, "art": ["080"]})
         sql, params = generate_criteria_sql([item])
 
-        assert "%s" in sql, "SQL should contain %s placeholder"
-        assert "080" in params, "Value should be in params list"
+        assert ":p" in sql, "SQL should contain named :p placeholder"
+        assert "080" in params.values(), "Value should be in params values"
         assert "'080'" not in sql, "Value must not be quoted in SQL string"
 
     def test_21_correct_column_name_for_art(self):
@@ -436,8 +439,8 @@ class TestRealWorldScenarios:
         ]
         sql, params = generate_criteria_sql(items)
 
-        assert '080' in params
-        assert '081' in params
+        assert '080' in params.values()
+        assert '081' in params.values()
         assert " OR " in sql
 
     def test_28_art_included_nutzung_excluded(self):
@@ -456,7 +459,7 @@ class TestRealWorldScenarios:
 
         assert "lgb_art_values" in sql
         assert "NOT (" in sql
-        assert "strassenverkehr" in params
+        assert "strassenverkehr" in params.values()
         assert " AND " in sql
 
     def test_29_all_exclusions_no_inclusions(self):
@@ -516,7 +519,7 @@ class TestRealWorldScenarios:
         assert "lgb_art_values" in sql
         assert "lgb_typ_values" in sql
         assert "NOT (" in sql
-        assert "strassenverkehr" in params
+        assert "strassenverkehr" in params.values()
         assert " AND " in sql
         assert " OR " in sql
 
@@ -538,7 +541,7 @@ class TestRealWorldScenarios:
         sql, params = generate_criteria_sql(items)
 
         for val in ["'080'", "'081'", "'085'", "'2631'", "'2649'", "'3020'"]:
-            assert val.strip("'") in params, f"Expected {val} in params"
+            assert val.strip("'") in params.values(), f"Expected {val} in params"
 
         assert sql.count("NOT (") == 3
         assert " AND " in sql
