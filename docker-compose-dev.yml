@@ -51,7 +51,7 @@ services:
       - agora_network
 
   metabase:
-    image: metabase/metabase:v0.56.8
+    image: metabase/metabase:v0.63.5
     container_name: metabase
     ports:
       - "3001:3000"
