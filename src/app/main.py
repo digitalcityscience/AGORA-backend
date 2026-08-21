@@ -27,6 +27,7 @@ origins = [
     "http://localhost:3000",    # Alternative port
     "http://localhost:8080",    # GeoServer UI
     "http://localhost:8002",    # Backend itself
+    "https://agora.dcs.hcu-hamburg.de/"
 ]
 app.add_middleware(
     CORSMiddleware,
