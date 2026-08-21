@@ -1,3 +1,3 @@
 # Build Base Docker
 
-docker build -t dcs-base-geoserver:2.25.6 .
+docker build -t dcs-base-geoserver:2.26.0 .

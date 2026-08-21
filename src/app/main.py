@@ -4,7 +4,7 @@ from typing import Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.router import auth, geometry_operations, test, administrative, ligfinder, parcel_maximizer
+from app.router import auth, geometry_operations, test, administrative, ligfinder, parcel_maximizer, geoserver_proxy
 
 from app.auth.database import Base
 from app.auth.database import engine
@@ -45,3 +45,4 @@ app.include_router(geometry_operations.router)
 app.include_router(administrative.router)
 app.include_router(ligfinder.router)
 app.include_router(parcel_maximizer.router)
+app.include_router(geoserver_proxy.router)
