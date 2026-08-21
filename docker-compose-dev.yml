@@ -41,7 +41,7 @@ services:
   geoserver:
     # GeoServer for map publishing and spatial layers
     # build: ./geoserver
-    image: agora-geoserver:2.26.0
+    image: agora-geoserver:2.27.6
     container_name: agora-geoserver-dev-container
     environment:
       - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}

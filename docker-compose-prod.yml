@@ -17,7 +17,7 @@ services:
       - agora_network
 
   api:
-    image: agora-api-image:latest # Assuming you've built this image
+    image: agora-api-image:geoserver_proxy # Assuming you've built this image
     container_name: agora-prod-api
     depends_on:
       - db
