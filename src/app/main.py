@@ -21,14 +21,19 @@ Base.metadata.create_all(bind=engine)
 # Initialize FastAPI application
 app = FastAPI()
 
-# Configure CORS (Cross-Origin Resource Sharing) to allow all origins
-origin = ["*"]
+# Configure CORS (Cross-Origin Resource Sharing) with specific origins for credential support
+origins = [
+    "http://localhost:5173",    # Vite dev server (frontend)
+    "http://localhost:3000",    # Alternative port
+    "http://localhost:8080",    # GeoServer UI
+    "http://localhost:8002",    # Backend itself
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origin,  # Allow requests from any origin
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allow all request headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
