@@ -134,8 +134,10 @@ This ensures the dev image reflects those changes.
 
 ### 🔧 Dev Mode
 
+please create a file called dev.env with the variables to include for development (take the .env.example file as a start)
+
 ```bash
-docker compose -f docker-compose-dev.yml --env-file src/app/.env up -d
+docker-compose --env-file dev.env -f docker-compose-dev.yml up -d
 ```
 
 ### 🚀 Production Mode
