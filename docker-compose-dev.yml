@@ -1,6 +1,6 @@
 # Development stack: API + PostGIS + GeoServer + Metabase
 services:
-  db:
+  db-dev:
     # Main PostGIS database used by the API
     image: kartoza/postgis:15-3.3
     container_name: agora-dev-db-kartoza
@@ -17,28 +17,37 @@ services:
     networks:
       - agora_network
 
-  api:
+  api-dev:
     # FastAPI service (live reload enabled for development)
     image: agora-api-image:geoserver_proxy
     container_name: agora-dev-api
     depends_on:
-      - db
+      - db-dev
     command: |
       bash -c '
       cd /src &&
       # Wait for database before starting API
-      while !</dev/tcp/db/5432; do sleep 1; done &&
+      while !</dev/tcp/db-dev/5432; do sleep 1; done &&
       poetry config virtualenvs.create false &&
       uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
     volumes:
       - ./src:/src
     environment:
       - WORKING_DIR=/src
+      - DATABASE_HOSTNAME=${DATABASE_HOSTNAME}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_MINUTES=${REFRESH_TOKEN_EXPIRE_MINUTES}
     ports:
       - ${API_PORT}:8000
     networks:
       - agora_network
-  geoserver:
+  geoserver-dev:
     # GeoServer for map publishing and spatial layers
     image: docker.osgeo.org/geoserver:3.0.1
     container_name: agora-geoserver-dev-container

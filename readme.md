@@ -141,26 +141,13 @@ docker-compose --env-file dev.env -f docker-compose-dev.yml up -d
 ```
 
 ### 🚀 Production Mode
+please create a file called dev.env with the variables to include for development (take the .env.example file as a start)
 
 ```bash
-docker compose -f docker-compose-prod.yml --env-file src/app/.env up -d
+docker-compose --env-file prod.env -f docker-compose-prod.yml up -d
 ```
 
-### 📁 Example `.env`
-
-> 📌 **Note:** The `.env` file must be located at:
->
-> ```
-> src/app/.env
-> ```
->
-> This path is used by both `docker-compose-dev.yml` and `docker-compose-prod.yml`. A template is available at:
->
-> ```
-> src/app/.env.example
-> ```
-
-> ⚠️ **GeoServer Notice:**
+> ⚠️ **GeoServer Notice (before version 3.0):**
 > Environment variables such as `GEOSERVER_ADMIN_USER` and `GEOSERVER_ADMIN_PASSWORD` **are used** by the GeoServer container **only if declared in your docker-compose file.**
 > However, CORS-related settings (like `GEOSERVER_CORS_ALLOWED_ORIGINS`, etc.) must be set manually in `geoserver_base/Dockerfile` and rebuilt accordingly.
 
