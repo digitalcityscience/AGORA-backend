@@ -11,9 +11,9 @@ router = APIRouter(
     prefix="/geoserver",
     tags=["geoserver"],
 )
-
 # GeoServer configuration
-GEOSERVER_BASE_URL = os.getenv("GEOSERVER_BASE_URL", "http://geoserver:8080/geoserver")
+GEOSERVER_HOSTNAME = os.getenv("GEOSERVER_HOSTNAME", "geoserver-dev")
+GEOSERVER_BASE_URL = f"http://{GEOSERVER_HOSTNAME}:8080/geoserver"
 GEOSERVER_USERNAME = os.getenv("GEOSERVER_ADMIN_USER", "admin")
 GEOSERVER_PASSWORD = os.getenv("GEOSERVER_ADMIN_PASSWORD", "geoserver")
 
@@ -102,6 +102,27 @@ async def proxy_get_layer_info(
             **auth_header,
         }
         response = await client.get(url, headers=headers, follow_redirects=True)
+        
+        # Debug: Log response info
+        print(f"DEBUG: Status Code = {response.status_code}")
+        print(f"DEBUG: Response Headers = {response.headers}")
+        print(f"DEBUG: Response Content = {response.content[:200]}")  # First 200 chars
+        
+        # Check if response is valid
+        if response.status_code != 200:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"GeoServer error: {response.text}"
+            )
+        
+        if not response.content:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=500,
+                detail="GeoServer returned empty response"
+            )
+        
         return response.json()
 
 
