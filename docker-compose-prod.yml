@@ -3,10 +3,10 @@ services:
     image: kartoza/postgis:15-3.3
     container_name: agora-prod-db
     volumes:
-      - agorabackend_agora-dev-db-data:/var/lib/postgresql
+      - agora-prod-db-data:/var/lib/postgresql
       - ./database/dumps:/var/lib/postgresql/dumps
     ports:
-      - 5434:5432 # Map host port 5434 to container port 5432
+      - ${DATABASE_PORT}:5432
     environment:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
@@ -31,66 +31,38 @@ services:
       - ./src:/src
     environment:
       - WORKING_DIR=/src
+      - DATABASE_HOSTNAME=${DATABASE_HOSTNAME}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_MINUTES=${REFRESH_TOKEN_EXPIRE_MINUTES}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     ports:
-      - 8002:8000
+      - ${API_PORT}:8000
     networks:
       - agora_network
   geoserver:
     # build: ./geoserver
     image: agora-geoserver:2.27.6
-    container_name: agora-geoserv..er-prod-container
+    container_name: agora-geoserver-prod-container
     environment:
       - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
       - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_ADMIN_PASSWORD}
     volumes:
       - agora-geoserver-data-prod:/geoserver_data/data
-      - /home/ortak/Desktop/sandbox/tosca-geoserver-postgis-test/docker-geoserver/geo-data:/mnt/data
-      - /home/ortak/Desktop/HCU/LIG/data:/mnt/LIG
     ports:
       - ${GEOSERVER_PORT}:8080
     networks:
       - agora_network
-
-  metabase:
-    image: metabase/metabase:v0.63.5
-    container_name: metabase
-    ports:
-      - "3001:3000"
-    environment:
-      MB_DB_TYPE: postgres
-      MB_DB_DBNAME: metabase
-      MB_DB_PORT: 5433
-      MB_DB_USER: metabase
-      MB_DB_PASS: ${METABASE_DB_PASSWORD}
-      MB_DB_HOST: metabase_db
-    networks:
-      - agora_network
-    restart: unless-stopped
-    depends_on:
-      - metabase_db
-  metabase_db:
-    image: postgres:15
-    container_name: metabase_db
-    expose:
-      - 5433
-    environment:
-      POSTGRES_DB: metabase
-      POSTGRES_USER: metabase
-      POSTGRES_PASSWORD: ${METABASE_DB_PASSWORD}
-    volumes:
-      - metabase_db_data:/var/lib/postgresql/data
-    networks:
-      - agora_network
-    command: ["-p", "5433"]
-    restart: unless-stopped
 
 networks:
   agora_network:
     driver: bridge
 
 volumes:
-  agorabackend_agora-dev-db-data: 
-    external: true  
+  agora-prod-db-data: 
   agora-geoserver-data-prod:
-  metabase_db_data:
-
