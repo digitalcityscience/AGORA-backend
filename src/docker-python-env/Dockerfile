@@ -1,4 +1,5 @@
 FROM ubuntu:22.04
+ARG TARGETARCH
 # build file for pangeo images
 
 LABEL org.opencontainers.image.source=https://github.com/pangeo-data/pangeo-docker-images
@@ -61,16 +62,23 @@ RUN echo ". ${CONDA_DIR}/etc/profile.d/conda.sh ; conda activate ${CONDA_ENV}" >
 # Install basic apt packages
 RUN echo "Installing Apt-get packages..." \
     && apt-get update --fix-missing > /dev/null \
-    && apt-get install -y apt-utils wget zip tzdata > /dev/null \
+    && apt-get install -y apt-utils build-essential wget zip tzdata > /dev/null \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 # Add TZ configuration - https://github.com/PrefectHQ/prefect/issues/3061
 ENV TZ UTC
 # ========================
 
-# Install latest mambaforge in ${CONDA_DIR}
-RUN echo "Installing Mambaforge..." \
-    && URL="https://github.com/conda-forge/miniforge/releases/download/25.3.1-0/Miniforge3-25.3.1-0-Linux-x86_64.sh" \
+# Install Miniforge for the target architecture.
+# TARGETARCH is only set by BuildKit; fall back to the image's own arch for the legacy builder.
+RUN echo "Installing Miniforge..." \
+    && ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
+    && case "${ARCH}" in \
+        amd64) MINIFORGE_ARCH="x86_64" ;; \
+        arm64) MINIFORGE_ARCH="aarch64" ;; \
+        *) echo "Unsupported architecture: ${ARCH}"; exit 1 ;; \
+    esac \
+    && URL="https://github.com/conda-forge/miniforge/releases/download/25.3.1-0/Miniforge3-25.3.1-0-Linux-${MINIFORGE_ARCH}.sh" \
     && wget --quiet ${URL} -O installer.sh \
     && /bin/bash installer.sh -u -b -p ${CONDA_DIR} \
     && rm installer.sh \
@@ -92,7 +100,7 @@ RUN if [ -s "conda-lock.yml" ]; then \
         conda-lock install --name ${CONDA_ENV} ${CONDA_LOCK_FILE} -y; \
     elif [ -s "environment.yml" ]; then \
         echo "Running command for environment.yml"; \
-        conda env create -f environment.yml --name ${CONDA_ENV} --no-default-packages -y \
+        conda env create -f environment.yml --name ${CONDA_ENV} --no-default-packages -y; \
     else \
         echo "Conda env is created by system with default ${PYTHON_VERSION}}, mamba,pip and poetry"; \
         conda create -n ${CONDA_ENV} python=${PYTHON_VERSION} mamba pip conda-lock poetry==1.3.1; \
@@ -107,7 +115,7 @@ RUN if [ -s "conda-lock.yml" ]; then \
 RUN echo "Checking for Poetry 'pyproject.toml'..." \
     && poetry config virtualenvs.create false \
     && if test -f "pyproject.toml" ; then \
-        ${NB_PYTHON_PREFIX}/bin/poetry install; \
+        ${NB_PYTHON_PREFIX}/bin/poetry install && \
         echo "Done installing Conda and Poetry"; \
     else \
         echo "No pyproject.toml found! *Initializing a new Poetry environment*"; \

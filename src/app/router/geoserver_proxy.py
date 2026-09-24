@@ -1,7 +1,7 @@
 """GeoServer proxy router to bypass CORS issues."""
 
 import httpx
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 from app.auth.database import get_db
@@ -16,6 +16,28 @@ GEOSERVER_HOSTNAME = os.getenv("GEOSERVER_HOSTNAME", "geoserver-dev")
 GEOSERVER_BASE_URL = f"http://{GEOSERVER_HOSTNAME}:8080/geoserver"
 GEOSERVER_USERNAME = os.getenv("GEOSERVER_ADMIN_USER", "admin")
 GEOSERVER_PASSWORD = os.getenv("GEOSERVER_ADMIN_PASSWORD", "geoserver")
+
+# WMS `format` values answered as GeoJSON; everything else is treated as an image format.
+WMS_JSON_FORMATS = {"geojson", "json", "application/json", "application/geo+json", "application/json;type=geojson"}
+
+
+def _wms_formats(fmt: str) -> tuple:
+    """
+    Map the client's WMS `format` option to (format sent to GeoServer, media type we respond with).
+    GeoServer only accepts "geojson" (not "application/json") and full image MIME types (not "png").
+    """
+    fmt = fmt.strip().lower()
+    if fmt in WMS_JSON_FORMATS:
+        return "geojson", "application/json"
+    if "/" not in fmt:
+        fmt = f"image/{fmt}"  # short forms, e.g. "png" -> image/png
+    return fmt, fmt.split(";")[0]
+
+
+def _is_expected_wms_type(media_type: str, geoserver_type: str) -> bool:
+    if media_type == "application/json":
+        return "json" in geoserver_type
+    return geoserver_type.startswith("image/")
 
 
 async def get_geoserver_auth():
@@ -144,8 +166,11 @@ async def proxy_get_wms(
 ):
     """
     Proxy: GET /{workspace}/wms?service=...&version=...&request=...&layers=...&bbox=...&width=...&height=...&srs=...&format=...&styles=...
-    Fetches WMS data (includes GeoJSON format).
+    Fetches WMS data. `format` selects the output and the response media type:
+      - geojson / json / application/json / application/geo+json → application/json
+      - png / jpeg / gif / … or a full image MIME type (image/png, …) → that image type
     """
+    geoserver_format, media_type = _wms_formats(format)
     async with httpx.AsyncClient() as client:
         url = f"{GEOSERVER_BASE_URL}/{workspace}/wms"
         params = {
@@ -157,7 +182,7 @@ async def proxy_get_wms(
             "width": width,
             "height": height,
             "srs": srs,
-            "format": format,
+            "format": geoserver_format,
             "styles": styles,
         }
         headers = {
@@ -168,11 +193,23 @@ async def proxy_get_wms(
             url, params=params, headers=headers, follow_redirects=True
         )
         
-        # Return appropriate response based on format
-        if format == "geojson":
-            return response.json()
-        else:
-            return response.content
+        # The requested format decides the response media type (GeoJSON or image)
+        geoserver_type = response.headers.get("content-type", "").split(";")[0].strip().lower()
+
+        # GeoServer reports WMS errors as an OGC ServiceException (XML), often with
+        # status 200 — never hand that to the client labelled as GeoJSON or an image.
+        if response.status_code != 200 or not _is_expected_wms_type(media_type, geoserver_type):
+            raise HTTPException(
+                status_code=502,
+                detail=f"GeoServer WMS error ({response.status_code}, {geoserver_type or 'no content-type'}): "
+                       f"{response.text[:500]}",
+            )
+
+        # JSON is normalised to application/json; images keep GeoServer's exact type (png8 -> image/png)
+        return Response(
+            content=response.content,
+            media_type=media_type if media_type == "application/json" else geoserver_type,
+        )
 
 
 @router.get("/rest/workspaces/{workspace}/layers/{layer}/featuretype")

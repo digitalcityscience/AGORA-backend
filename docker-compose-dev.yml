@@ -15,7 +15,10 @@ services:
       - FORCE_SSL=FALSE
     restart: on-failure
     networks:
-      - agora_network
+      agora_network:
+        # GeoServer datastores restored from production connect to host "db"
+        aliases:
+          - db
 
   api-dev:
     # FastAPI service (live reload enabled for development)
