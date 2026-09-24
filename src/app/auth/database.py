@@ -8,7 +8,7 @@ from sqlalchemy.pool import QueuePool  # Connection pooling for better performan
 from app.auth.config import settings
 
 # Build PostgreSQL connection string from environment variables
-SQL_DATABASE_URL = f"postgresql://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOSTNAME}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}"
+SQL_DATABASE_URL = f"postgresql://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOSTNAME}:5432/{settings.DATABASE_NAME}"
 
 # Create database engine with connection pooling
 # pool_size=20: maintain 20 persistent connections
@@ -38,15 +38,7 @@ def get_db():
         db.close()
 
 
-def execute_sql_query(sql_query: str):
-    """Execute raw SQL query and return results.
-    
-    Args:
-        sql_query: Raw SQL query string with optional parameters
-        
-    Returns:
-        SQLAlchemy result object with fetchone(), fetchall() methods
-    """
+def execute_sql_query(sql_query: str, params: dict = None):
     with engine.connect() as connection:
-        result = connection.execute(text(sql_query))
+        result = connection.execute(text(sql_query), params or {})
         return result

@@ -1,13 +1,13 @@
 # Development stack: API + PostGIS + GeoServer + Metabase
 services:
-  db:
+  db-dev:
     # Main PostGIS database used by the API
     image: kartoza/postgis:15-3.3
     container_name: agora-dev-db-kartoza
     volumes:
       - agora-dev-db-data:/var/lib/postgresql
     ports:
-      - 5434:5432 # Map host port 5434 to container port 5432
+      - ${DATABASE_PORT}:5432 # Map host port 5434 to container port 5432
     environment:
       - POSTGRES_DB=${DATABASE_NAME}
       - POSTGRES_USER=${DATABASE_USERNAME}
@@ -17,41 +17,50 @@ services:
     networks:
       - agora_network
 
-  api:
+  api-dev:
     # FastAPI service (live reload enabled for development)
     image: agora-api-image:geoserver_proxy
     container_name: agora-dev-api
     depends_on:
-      - db
+      - db-dev
     command: |
       bash -c '
       cd /src &&
       # Wait for database before starting API
-      while !</dev/tcp/db/5432; do sleep 1; done &&
+      while !</dev/tcp/db-dev/5432; do sleep 1; done &&
       poetry config virtualenvs.create false &&
       uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000'
     volumes:
       - ./src:/src
     environment:
       - WORKING_DIR=/src
+      - DATABASE_HOSTNAME=${DATABASE_HOSTNAME}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - REFRESH_TOKEN_EXPIRE_MINUTES=${REFRESH_TOKEN_EXPIRE_MINUTES}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     ports:
-      - 8002:8000
+      - ${API_PORT}:8000
     networks:
       - agora_network
-  geoserver:
+  geoserver-dev:
     # GeoServer for map publishing and spatial layers
-    # build: ./geoserver
-    image: agora-geoserver:2.27.6
+    image: docker.osgeo.org/geoserver:3.0.1
     container_name: agora-geoserver-dev-container
     environment:
       - GEOSERVER_ADMIN_USER=${GEOSERVER_ADMIN_USER}
       - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_ADMIN_PASSWORD}
+      # IMPORTANT: Make sure to not use quotes (") in the next lines
+      - INSTALL_EXTENSIONS=true
+      - STABLE_EXTENSIONS=vectortiles,mbstyle
     volumes:
       # Persistent GeoServer data directory
-      - agora-geoserver-data-dev:/geoserver_data/data
-      # Local host paths for development datasets
-      - /home/ortak/Desktop/sandbox/tosca-geoserver-postgis-test/docker-geoserver/geo-data:/mnt/data
-      - /home/ortak/Desktop/HCU/LIG/data:/mnt/LIG
+      - agora-geoserver-data-dev:/opt/geoserver_data
     ports:
       - ${GEOSERVER_PORT}:8080
     networks:
@@ -90,8 +99,6 @@ services:
       - agora_network
     command: ["-p", "5433"]
     restart: unless-stopped
-
-
 
 networks:
   agora_network:

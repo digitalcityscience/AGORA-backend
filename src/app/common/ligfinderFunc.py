@@ -4,7 +4,7 @@ def generate_criteria_sql(criteria):
     where_clauses = []
 
     for item in criteria:
-        data = item.data  # data type dict 
+        data = item.data  # data type dict
         status = item.status
         is_included = status == "included"
 

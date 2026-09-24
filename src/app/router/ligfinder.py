@@ -15,7 +15,7 @@ def ligfinder_filter(data: TableRequest = Body(...)):
           'type', 'FeatureCollection',
           'features', json_agg(ST_AsGeoJSON(p.*)::json)
         )
-        FROM 
+        FROM
         """
         sql_query += f"{data.table_name} AS p"
         where_clauses = []
@@ -58,7 +58,6 @@ def ligfinder_filter(data: TableRequest = Body(...)):
 
         if not raw_data or not raw_data[0] or not raw_data[0].get("features"):
             return {"type": "FeatureCollection", "features": []}
-        # print(f'{len(raw_data[0]["features"])} features found.')
         return raw_data[0]
 
     except ValueError as e:

@@ -4,16 +4,16 @@ from typing import Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.router import auth, geometry_operations, test, administrative, ligfinder, parcel_maximizer, geoserver_proxy
+from app.router import auth, geometry_operations, test, administrative, ligfinder, parcel_maximizer, geoserver_proxy, ligfinder_advanced
 
 from app.auth.database import Base
 from app.auth.database import engine
+from app.auth.config import settings
 
 from sqlalchemy.orm import Session
 from app.auth.database import get_db
 from fastapi import FastAPI, Depends
 from sqlalchemy import text
-
 
 # Create database tables on startup
 Base.metadata.create_all(bind=engine)
@@ -21,14 +21,8 @@ Base.metadata.create_all(bind=engine)
 # Initialize FastAPI application
 app = FastAPI()
 
-# Configure CORS (Cross-Origin Resource Sharing) with specific origins for credential support
-origins = [
-    "http://localhost:5173",    # Vite dev server (frontend)
-    "http://localhost:3000",    # Alternative port
-    "http://localhost:8080",    # GeoServer UI
-    "http://localhost:8002",    # Backend itself
-    "https://agora.dcs.hcu-hamburg.de"
-]
+origins = settings.ALLOWED_ORIGINS.split(",")  # Split allowed origins from environment variable
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -52,3 +46,4 @@ app.include_router(administrative.router)
 app.include_router(ligfinder.router)
 app.include_router(parcel_maximizer.router)
 app.include_router(geoserver_proxy.router)
+app.include_router(ligfinder_advanced.router)
