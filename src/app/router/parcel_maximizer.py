@@ -1,7 +1,7 @@
 import re
 from fastapi import APIRouter, Body, HTTPException, status
 from app.auth import database
-from app.common.ligfinderFuncAdvanced import generate_criteria_sql, CriteriaLimitExceeded
+from app.common.ligfinderFuncAdvanced import build_request_criteria_sql, CriteriaLimitExceeded
 from app.models.ligfinderModelAdvanced import MaximizerRequest
 
 router = APIRouter(prefix="/ligfinder", tags=["ligfinder"])
@@ -22,14 +22,20 @@ def _validate_op(op: str) -> str:
     return op
 
 
+_PARAM_REF = re.compile(r'(?<!:):([A-Za-z_][A-Za-z0-9_]*)')
+
+
 def _embed_params(sql: str, params: dict) -> str:
     # Named params (`:p0`) cannot bind inside dollar-quoted $$ blocks executed by
     # pgr_connectedComponents. Substitute them with properly-escaped SQL literals instead.
-    result = sql
-    for key, val in params.items():
-        safe_val = str(val).replace("'", "''")
-        result = result.replace(f":{key}", f"'{safe_val}'")
-    return result
+    # Single regex pass: `:p1` never matches inside `:p10`, and substituted values
+    # are never re-scanned (a value containing ":p2" cannot pull in another param).
+    def _literal(match):
+        key = match.group(1)
+        if key not in params:
+            return match.group(0)
+        return "'" + str(params[key]).replace("'", "''") + "'"
+    return _PARAM_REF.sub(_literal, sql)
 
 
 @router.post("/maximizer", status_code=status.HTTP_200_OK)
@@ -64,13 +70,13 @@ def discover_parcel_islands(data: MaximizerRequest = Body(...)):
             _quoted_uuids = ", ".join("'" + str(u).replace("'", "''") + "'" for u in geometry)
             inner_clauses.append(f'"UUID" IN ({_quoted_uuids})')
 
-        # Criteria — unpack tuple, build outer (params) and inner (embedded) versions
-        if data.criteria:
-            criteria_sql, criteria_params = generate_criteria_sql(data.criteria)
-            if criteria_sql:
-                all_params.update(criteria_params)
-                outer_clauses.append(criteria_sql)
-                inner_clauses.append(_embed_params(criteria_sql, criteria_params))
+        # Criteria — advanced tree (criteria_group), groups, or flat list;
+        # build outer (params) and inner (embedded) versions
+        criteria_sql, criteria_params = build_request_criteria_sql(data)
+        if criteria_sql:
+            all_params.update(criteria_params)
+            outer_clauses.append(criteria_sql)
+            inner_clauses.append(_embed_params(criteria_sql, criteria_params))
 
         # Metric filters — column/op validated, values parameterized for outer, embedded for inner
         if data.metric:

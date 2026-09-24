@@ -2,7 +2,7 @@ import re
 from fastapi import APIRouter, Body, status, HTTPException
 from app.models.ligfinderModelAdvanced import TableRequest
 from app.auth import database
-from app.common.ligfinderFuncAdvanced import generate_criteria_sql, CriteriaLimitExceeded
+from app.common.ligfinderFuncAdvanced import build_request_criteria_sql, CriteriaLimitExceeded
 
 router = APIRouter(prefix="/ligfinder-advanced", tags=["ligfinder-advanced"])
 
@@ -48,19 +48,11 @@ def ligfinder_advanced_filter(data: TableRequest = Body(...)):
             placeholders = ", ".join(f":geom_{i}" for i in range(len(geometry)))
             where_clauses.append(f'p."UUID" IN ({placeholders})')
 
-        # Criteria — both old (flat list) and new (groups) formats
-        if data.groups:
-            flat_criteria = [c for g in data.groups for c in g.criteria]
-            if flat_criteria:
-                criteria_sql, criteria_params = generate_criteria_sql(flat_criteria)
-                if criteria_sql:
-                    all_params.update(criteria_params)
-                    where_clauses.append(criteria_sql)
-        elif data.criteria:
-            criteria_sql, criteria_params = generate_criteria_sql(data.criteria)
-            if criteria_sql:
-                all_params.update(criteria_params)
-                where_clauses.append(criteria_sql)
+        # Criteria — advanced tree (criteria_group), groups, or flat list
+        criteria_sql, criteria_params = build_request_criteria_sql(data)
+        if criteria_sql:
+            all_params.update(criteria_params)
+            where_clauses.append(criteria_sql)
 
         # Metric filters — column/op validated, values parameterized
         if data.metric:

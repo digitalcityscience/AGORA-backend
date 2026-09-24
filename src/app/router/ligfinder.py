@@ -3,6 +3,7 @@ from geojson_pydantic import FeatureCollection
 from app.models.ligfinderModel import TableRequest
 from app.auth import database
 from app.common.ligfinderFunc import generate_criteria_sql
+from app.router.ligfinder_advanced import ligfinder_advanced_filter
 
 
 router = APIRouter(prefix="/ligfinder", tags=["ligfinder"])
@@ -64,3 +65,13 @@ def ligfinder_filter(data: TableRequest = Body(...)):
         raise HTTPException(status_code=400, detail=f"A ValueError occurred: {e}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
+
+
+# Advanced (block-based) criteria filter, served under the URL the frontend
+# already calls. Same hardened handler as POST /ligfinder-advanced/filter.
+router.add_api_route(
+    "/filter/advanced",
+    ligfinder_advanced_filter,
+    methods=["POST"],
+    status_code=status.HTTP_201_CREATED,
+)
