@@ -10,7 +10,7 @@ echo Backup tar path: $BACKUP_TAR_PATH
 mkdir -p geoserver_backup/temp
 tar -xzf ${BACKUP_TAR_PATH} -C geoserver_backup/temp
 
-docker cp geoserver_backup/temp/data ${GEOSERVER_CONTAINER_NAME}:/geoserver_data
+docker cp geoserver_backup/temp/data/. ${GEOSERVER_CONTAINER_NAME}:/opt/geoserver_data
 
 rm -rf geoserver_backup/temp
 
